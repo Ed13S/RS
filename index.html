@@ -10,7 +10,8 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#eef2f7;color:#1
 .slide{display:none;min-height:100vh;padding:28px 5vw 100px;animation:slideIn .45s ease}
 .slide.active{display:block}
 @keyframes slideIn{from{opacity:0;transform:translateX(35px)}to{opacity:1;transform:translateX(0)}}
-.pagehead{max-width:1100px;margin:auto;background:white;border-radius:20px;padding:24px 28px;box-shadow:0 8px 28px #00000014;margin-bottom:22px}
+.pagehead{max-width:1100px;margin:auto;background:white;border-radius:20px;padding:24px 28px;box-shadow:0 8px 28px #00000014;margin-bottom:22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px}
+.pagehead-content{flex:1;min-width:250px}
 .badge{display:inline-block;font-size:12px;font-weight:800;letter-spacing:1.5px;padding:7px 10px;border-radius:8px;background:#172033;color:white}
 h1{margin:10px 0 5px;font-size:clamp(26px,4vw,42px)}
 .pagehead p{margin:0;color:#5c6678}
@@ -35,9 +36,12 @@ strong{display:inline-block;margin-top:5px}
 
 <section class="slide active">
   <div class="pagehead">
-    <span class="badge">PAGE 16</span>
-    <h1>Page 16 — Week 1 Mixed Review</h1>
-    <p>Click <b>Show full working</b> to see the written method.</p>
+    <div class="pagehead-content">
+      <span class="badge">PAGE 16</span>
+      <h1>Page 16 — Week 1 Mixed Review</h1>
+      <p>Click <b>Show full working</b> to see the written method.</p>
+    </div>
+    <button onclick="toggleAll(this)">Expand All</button>
   </div>
   <div class="grid">
 <div class="card">
@@ -164,9 +168,12 @@ strong{display:inline-block;margin-top:5px}
 </section>
 <section class="slide ">
   <div class="pagehead">
-    <span class="badge">PAGE 26</span>
-    <h1>Page 26 — Week 2 Day 4</h1>
-    <p>Click <b>Show full working</b> to see the written method.</p>
+    <div class="pagehead-content">
+      <span class="badge">PAGE 26</span>
+      <h1>Page 26 — Week 2 Day 4</h1>
+      <p>Click <b>Show full working</b> to see the written method.</p>
+    </div>
+    <button onclick="toggleAll(this)">Expand All</button>
   </div>
   <div class="grid">
 <div class="card">
@@ -300,9 +307,12 @@ or
 </section>
 <section class="slide ">
   <div class="pagehead">
-    <span class="badge">PAGE 28</span>
-    <h1>Page 28 — Week 2 Day 5 Mixed Challenge</h1>
-    <p>Click <b>Show full working</b> to see the written method.</p>
+    <div class="pagehead-content">
+      <span class="badge">PAGE 28</span>
+      <h1>Page 28 — Week 2 Day 5 Mixed Challenge</h1>
+      <p>Click <b>Show full working</b> to see the written method.</p>
+    </div>
+    <button onclick="toggleAll(this)">Expand All</button>
   </div>
   <div class="grid">
 <div class="card">
@@ -426,9 +436,12 @@ or
 </section>
 <section class="slide ">
   <div class="pagehead">
-    <span class="badge">PAGE 38</span>
-    <h1>Page 38 — Fractions &amp; Decimals</h1>
-    <p>Click <b>Show full working</b> to see the written method.</p>
+    <div class="pagehead-content">
+      <span class="badge">PAGE 38</span>
+      <h1>Page 38 — Fractions &amp; Decimals</h1>
+      <p>Click <b>Show full working</b> to see the written method.</p>
+    </div>
+    <button onclick="toggleAll(this)">Expand All</button>
   </div>
   <div class="grid">
 <div class="card">
@@ -549,6 +562,32 @@ function toggleWork(btn){
   const w=btn.nextElementSibling;
   w.classList.toggle('show');
   btn.textContent=w.classList.contains('show')?'Hide working':'Show full working';
+  // Check if we need to update the Expand All button state for this slide
+  updateExpandAllBtn(slides[current]);
+}
+function toggleAll(btn){
+  const activeSlide=slides[current];
+  const works=activeSlide.querySelectorAll('.work');
+  const actionBtns=activeSlide.querySelectorAll('.card > button');
+  const expanding=btn.textContent==='Expand All';
+
+  works.forEach((w, idx)=>{
+    if(expanding){
+      w.classList.add('show');
+      actionBtns[idx].textContent='Hide working';
+    } else {
+      w.classList.remove('show');
+      actionBtns[idx].textContent='Show full working';
+    }
+  });
+
+  btn.textContent=expanding?'Collapse All':'Expand All';
+}
+function updateExpandAllBtn(slide){
+  const expandBtn=slide.querySelector('.pagehead > button');
+  const works=slide.querySelectorAll('.work');
+  const allShown=[...works].every(w=>w.classList.contains('show'));
+  expandBtn.textContent=allShown?'Collapse All':'Expand All';
 }
 document.addEventListener('keydown',e=>{
  if(e.key==='ArrowRight')next();
