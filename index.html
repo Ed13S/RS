@@ -15,6 +15,7 @@ header{max-width:1100px;margin:0 auto 16px}
 .header-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
 small{background:#172033;color:white;padding:7px;border-radius:6px;font-weight:bold}
 h1{font-size:clamp(25px,4vw,38px);margin:10px 0 6px}
+h2{font-size:24px;margin:28px 0 12px}
 .controls{display:flex;gap:10px}
 .btn-secondary{background:#4a5568;color:white;border:0;border-radius:8px;padding:8px 14px;font-weight:bold;cursor:pointer}
 .btn-secondary:hover{background:#2d3748}
@@ -27,11 +28,22 @@ button:hover{opacity:0.9}
 .nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:#172033;color:white;border-radius:13px;padding:8px;display:flex;gap:12px;align-items:center;z-index:100}
 .nav button{background:white;color:#172033}
 #count{min-width:80px;text-align:center;font-weight:bold}
-@media print{.slide{display:block;page-break-after:always}.nav,button,.controls{display:none}.grid pre{display:block}}
+.section-title{
+  max-width:1100px;
+  margin:28px auto 12px;
+  font-size:24px;
+  color:#172033;
+}
+@media print{
+  .slide{display:block;page-break-after:always}
+  .nav,button,.controls{display:none}
+  .grid pre{display:block}
+}
 </style>
 </head>
 <body>
 
+<!-- PAGE 53 -->
 <section class="slide active">
   <header>
     <div class="header-top">
@@ -44,6 +56,7 @@ button:hover{opacity:0.9}
     <h1>53 — Week 5 Mixed Operations</h1>
     <p>Tap to reveal each worked solution.</p>
   </header>
+
   <div class="grid">
     <article>
       <h3>345 + 2,678</h3>
@@ -55,6 +68,7 @@ button:hover{opacity:0.9}
 Carry: 5+8=13; 4+7+1=12; 3+6+1=10; 2+1=3.
 Answer: 3,023</pre>
     </article>
+
     <article>
       <h3>5,000 − 2,846</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
@@ -65,6 +79,7 @@ Answer: 3,023</pre>
 Regroup through zeros: 10−6=4, 9−4=5, 9−8=1, 4−2=2.
 Answer: 2,154</pre>
     </article>
+
     <article>
       <h3>46 × 23</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
@@ -77,6 +92,7 @@ Answer: 2,154</pre>
  1058
 Answer: 1,058</pre>
     </article>
+
     <article>
       <h3>125 × 16</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
@@ -89,50 +105,60 @@ Answer: 1,058</pre>
    2000
 Answer: 2,000</pre>
     </article>
+
     <article>
       <h3>936 ÷ 8</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>8 goes into 9 once (remainder 1); bring down 3 → 13, 8 goes once (remainder 5); bring down 6 → 56, 8 goes 7 times.
 936 ÷ 8 = 117</pre>
     </article>
+
     <article>
       <h3>475 ÷ 6</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>6×79=474; 475−474=1.
 Answer: 79 remainder 1</pre>
     </article>
+
     <article>
       <h3>□ × 8 = 456</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>456 ÷ 8 = 57. Check: 57×8=456.
 Answer: 57</pre>
     </article>
+
     <article>
       <h3>720 ÷ □ = 12</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>720 ÷ 12 = 60. Check: 720÷60=12.
 Answer: 60</pre>
     </article>
+
     <article>
       <h3>24×25 vs 30×20</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>24×25=600; 30×20=600. They are equal.</pre>
     </article>
+
     <article>
       <h3>×5, +15, then ÷5 gives 12</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
-      <pre>Work backwards: 12×5=60; 60−15=45; 45÷5=9. Answer: 9</pre>
+      <pre>Work backwards: 12×5=60; 60−15=45; 45÷5=9.
+Answer: 9</pre>
     </article>
+
     <article>
       <h3>124×6</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>124×6=(100×6)+(20×6)+(4×6)=600+120+24=744</pre>
     </article>
+
     <article>
       <h3>237×5</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>237×5=1,185</pre>
     </article>
+
     <article>
       <h3>356×4</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
@@ -141,6 +167,8 @@ Answer: 60</pre>
   </div>
 </section>
 
+
+<!-- PAGE 49 -->
 <section class="slide">
   <header>
     <div class="header-top">
@@ -153,70 +181,181 @@ Answer: 60</pre>
     <h1>49 — Week 4 Day 4: Money</h1>
     <p>Tap to reveal each worked solution.</p>
   </header>
+
+  <!-- MORE PRACTICE -->
+  <h2 class="section-title">More Practice</h2>
   <div class="grid">
+
     <article>
-      <h3>$5.00 + $3.50</h3>
+      <h3>1. $20.00 − $7.45 =</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
-      <pre>$5.00+$3.50=$8.50</pre>
+      <pre>$20.00 − $7.45
+
+Borrow and subtract:
+$20.00 − $7.45 = $12.55
+
+Answer: $12.55</pre>
     </article>
+
     <article>
-      <h3>$10.00 − $4.75</h3>
+      <h3>2. $15.50 − $9.85 =</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
-      <pre>Regroup: $10.00−$4.75=$5.25</pre>
+      <pre>$15.50 − $9.85
+
+$15.50 − $9.85 = $5.65
+
+Answer: $5.65</pre>
     </article>
+
     <article>
-      <h3>$12.50 + $7.25</h3>
+      <h3>3. $25.00 − $13.60 =</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
-      <pre>$12.50+$7.25=$19.75</pre>
+      <pre>$25.00 − $13.60
+
+$25.00 − $13.60 = $11.40
+
+Answer: $11.40</pre>
     </article>
+
     <article>
-      <h3>$20.00 − $13.60</h3>
+      <h3>4. $30.00 − $18.75 =</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
-      <pre>$20.00−$13.60=$6.40</pre>
+      <pre>$30.00 − $18.75
+
+$30.00 − $18.75 = $11.25
+
+Answer: $11.25</pre>
     </article>
+
     <article>
-      <h3>Book $12.50 + case $8.75; change from $50</h3>
+      <h3>5. $50.00 − $22.90 =</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
-      <pre>Total: $12.50+$8.75=$21.25. Change: $50−$21.25=$28.75.</pre>
+      <pre>$50.00 − $22.90
+
+$50.00 − $22.90 = $27.10
+
+Answer: $27.10</pre>
     </article>
+
+  </div>
+
+
+  <!-- KEEP GOING -->
+  <h2 class="section-title">Keep Going</h2>
+  <div class="grid">
+
     <article>
-      <h3>$30 less $14.95 and $3.50</h3>
+      <h3>1. $7.85 + $4.60 =</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
-      <pre>$14.95+$3.50=$18.45; $30−$18.45=$11.55 left.</pre>
+      <pre>$7.85 + $4.60
+
+$7.85 + $4.60 = $12.45
+
+Answer: $12.45</pre>
     </article>
+
     <article>
-      <h3>4 tickets at $12, popcorn $8, drinks $10</h3>
+      <h3>2. $9.90 + $6.25 =</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
-      <pre>4×$12=$48; $48+$8+$10=$66.</pre>
+      <pre>$9.90 + $6.25
+
+$9.90 + $6.25 = $16.15
+
+Answer: $16.15</pre>
     </article>
+
     <article>
-      <h3>$50 budget: $18.50+$24.95+$4.50</h3>
+      <h3>3. $13.45 + $8.70 =</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
-      <pre>Total=$47.95; $50−$47.95=$2.05 left. Yes, affordable.</pre>
+      <pre>$13.45 + $8.70
+
+$13.45 + $8.70 = $22.15
+
+Answer: $22.15</pre>
     </article>
+
     <article>
-      <h3>$6.50+$3.25</h3>
+      <h3>4. $10.15 + $7.35 =</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
-      <pre>$9.75</pre>
+      <pre>$10.15 + $7.35
+
+$10.15 + $7.35 = $17.50
+
+Answer: $17.50</pre>
     </article>
+
     <article>
-      <h3>$8.75+$4.40</h3>
+      <h3>5. $16.60 + $9.45 =</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
-      <pre>$13.15</pre>
+      <pre>$16.60 + $9.45
+
+$16.60 + $9.45 = $26.05
+
+Answer: $26.05</pre>
     </article>
+
+  </div>
+
+
+  <!-- FINAL STRETCH -->
+  <h2 class="section-title">Final Stretch</h2>
+  <div class="grid">
+
     <article>
-      <h3>$12.30+$7.65</h3>
+      <h3>1. $22.00 − $9.65 =</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
-      <pre>$19.95</pre>
+      <pre>$22.00 − $9.65
+
+$22.00 − $9.65 = $12.35
+
+Answer: $12.35</pre>
     </article>
+
     <article>
-      <h3>$9.99+$5.05</h3>
+      <h3>2. $17.50 − $11.85 =</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
-      <pre>$15.04</pre>
+      <pre>$17.50 − $11.85
+
+$17.50 − $11.85 = $5.65
+
+Answer: $5.65</pre>
     </article>
+
+    <article>
+      <h3>3. $28.00 − $15.60 =</h3>
+      <button onclick="toggleWorking(this)">Show full working</button>
+      <pre>$28.00 − $15.60
+
+$28.00 − $15.60 = $12.40
+
+Answer: $12.40</pre>
+    </article>
+
+    <article>
+      <h3>4. $33.00 − $21.75 =</h3>
+      <button onclick="toggleWorking(this)">Show full working</button>
+      <pre>$33.00 − $21.75
+
+$33.00 − $21.75 = $11.25
+
+Answer: $11.25</pre>
+    </article>
+
+    <article>
+      <h3>5. $55.00 − $27.90 =</h3>
+      <button onclick="toggleWorking(this)">Show full working</button>
+      <pre>$55.00 − $27.90
+
+$55.00 − $27.90 = $27.10
+
+Answer: $27.10</pre>
+    </article>
+
   </div>
 </section>
 
+
+<!-- PAGE 23 -->
 <section class="slide">
   <header>
     <div class="header-top">
@@ -229,87 +368,104 @@ Answer: 60</pre>
     <h1>23 — Division Practice</h1>
     <p>Tap to reveal each worked solution.</p>
   </header>
+
   <div class="grid">
     <article>
       <h3>155÷5</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>155÷5=31</pre>
     </article>
+
     <article>
       <h3>378÷9</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>378÷9=42</pre>
     </article>
+
     <article>
       <h3>163÷7</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>7×23=161; 163−161=2 → 23 R2</pre>
     </article>
+
     <article>
       <h3>248÷9</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>9×27=243; 248−243=5 → 27 R5</pre>
     </article>
+
     <article>
       <h3>315÷6</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>6×52=312; remainder 3 → 52 R3</pre>
     </article>
+
     <article>
       <h3>402÷8</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>8×50=400; remainder 2 → 50 R2</pre>
     </article>
+
     <article>
       <h3>287÷5</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>5×57=285; remainder 2 → 57 R2</pre>
     </article>
+
     <article>
       <h3>156÷6</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>156÷6=26</pre>
     </article>
+
     <article>
       <h3>147÷7</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>147÷7=21</pre>
     </article>
+
     <article>
       <h3>145÷5</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>145÷5=29</pre>
     </article>
+
     <article>
       <h3>132÷4</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>132÷4=33</pre>
     </article>
+
     <article>
       <h3>360÷8</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>360÷8=45</pre>
     </article>
+
     <article>
       <h3>178÷7</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>7×25=175; remainder 3 → 25 R3</pre>
     </article>
+
     <article>
       <h3>263÷9</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>9×29=261; remainder 2 → 29 R2</pre>
     </article>
+
     <article>
       <h3>329÷6</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>6×54=324; remainder 5 → 54 R5</pre>
     </article>
+
     <article>
       <h3>418÷8</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>8×52=416; remainder 2 → 52 R2</pre>
     </article>
+
     <article>
       <h3>301÷5</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
@@ -318,6 +474,8 @@ Answer: 60</pre>
   </div>
 </section>
 
+
+<!-- PAGE 27 -->
 <section class="slide">
   <header>
     <div class="header-top">
@@ -330,72 +488,86 @@ Answer: 60</pre>
     <h1>27 — Division &amp; Multiplication Practice</h1>
     <p>Tap to reveal each worked solution.</p>
   </header>
+
   <div class="grid">
     <article>
       <h3>126÷7</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>126÷7=18</pre>
     </article>
+
     <article>
       <h3>168÷8</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>168÷8=21</pre>
     </article>
+
     <article>
       <h3>216÷9</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>216÷9=24</pre>
     </article>
+
     <article>
       <h3>135÷5</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>135÷5=27</pre>
     </article>
+
     <article>
       <h3>49×6</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>(40×6)+(9×6)=240+54=294</pre>
     </article>
+
     <article>
       <h3>42×7</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>40×7+2×7=280+14=294</pre>
     </article>
+
     <article>
       <h3>56×8</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>50×8+6×8=400+48=448</pre>
     </article>
+
     <article>
       <h3>68×5</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>60×5+8×5=300+40=340</pre>
     </article>
+
     <article>
       <h3>77×9</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>70×9+7×9=630+63=693</pre>
     </article>
+
     <article>
       <h3>102÷6</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>102÷6=17</pre>
     </article>
+
     <article>
       <h3>133÷7</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>133÷7=19</pre>
     </article>
+
     <article>
       <h3>184÷8</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>184÷8=23</pre>
     </article>
+
     <article>
       <h3>234÷9</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
       <pre>234÷9=26</pre>
     </article>
+
     <article>
       <h3>145÷5</h3>
       <button onclick="toggleWorking(this)">Show full working</button>
@@ -404,11 +576,14 @@ Answer: 60</pre>
   </div>
 </section>
 
+
+<!-- NAVIGATION -->
 <div class="nav">
   <button onclick="go(-1)">← Previous</button>
   <span id="count">Page 1 of 4</span>
   <button onclick="go(1)">Next →</button>
 </div>
+
 
 <script>
 let n=0, s=[...document.querySelectorAll('.slide')];
@@ -423,15 +598,19 @@ function go(d){
 function toggleWorking(btn){
   let w = btn.nextElementSibling;
   w.classList.toggle('show');
-  btn.textContent = w.classList.contains('show') ? 'Hide working' : 'Show full working';
+  btn.textContent = w.classList.contains('show')
+    ? 'Hide working'
+    : 'Show full working';
 }
 
 function togglePage(btn, showAll){
   let slide = btn.closest('.slide');
   let articles = slide.querySelectorAll('.grid article');
+
   articles.forEach(art => {
     let pre = art.querySelector('pre');
     let button = art.querySelector('button');
+
     if(showAll){
       pre.classList.add('show');
       button.textContent = 'Hide working';
@@ -447,5 +626,7 @@ document.addEventListener('keydown', e => {
   if(e.key === 'ArrowLeft') go(-1);
 });
 </script>
+
 </body>
 </html>
+
