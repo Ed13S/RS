@@ -4,288 +4,266 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Year 7 Algebraic Substitution Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        h1 {
-            text-align: center;
-            color: #2c3e50;
-        }
-        .instructions {
-            background-color: #e8f4f8;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 5px solid #3498db;
-        }
-        .question-card {
-            background: #fff;
-            padding: 15px 20px;
-            margin-bottom: 12px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .question-text {
-            font-size: 1.05rem;
-            font-weight: 500;
-        }
-        input[type="number"] {
-            padding: 8px;
-            width: 80px;
-            font-size: 1rem;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            text-align: center;
-        }
-        .btn-container {
-            text-align: center;
-            margin-top: 30px;
-            margin-bottom: 40px;
-        }
-        button {
-            background-color: #2ecc71;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            font-size: 1.1rem;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.2s;
-        }
-        button:hover {
-            background-color: #27ae60;
-        }
-        #result-container {
-            text-align: center;
-            font-size: 1.4rem;
-            font-weight: bold;
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 8px;
-            display: none;
-        }
-        .correct-indicator {
-            color: #27ae60;
-            font-weight: bold;
-            margin-left: 10px;
-        }
-        .incorrect-indicator {
-            color: #c0392b;
-            font-weight: bold;
-            margin-left: 10px;
-        }
+        body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 min-h-screen py-10 px-4 sm:px-6">
 
-    <h1>Year 7 Algebraic Substitution Quiz</h1>
-    
-    <div class="instructions">
-        <p><strong>Instructions:</strong> Type your numerical answers into the input boxes next to each question. Click the "Submit Quiz" button at the bottom to check your work and see your final score!</p>
+    <div class="max-w-2xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-indigo-600 mb-2">Year 7 Algebraic Substitution Quiz</h1>
+            <p class="text-slate-600">Test your skills by substituting values into algebraic expressions!</p>
+        </header>
+
+        <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-r-lg mb-8 shadow-sm">
+            <h2 class="font-semibold text-indigo-900 mb-1">Instructions:</h2>
+            <p class="text-sm text-indigo-700">Type your numerical answers in the boxes. If you submit with empty boxes, they will be marked as unattempted. You can edit any answer at any time, and the feedback will automatically update!</p>
+        </div>
+
+        <form id="quiz-form" class="space-y-4">
+            
+            <!-- Question Template Generator Container via HTML -->
+            <!-- Q1 -->
+            <div class="question-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all">
+                <span class="font-medium text-slate-700">1. If <span class="text-indigo-600 font-semibold">x = 5</span>, find the value of <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-900 font-mono">x + 7</span></span>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <input type="number" data-answer="12" class="answer-input w-24 px-3 py-2 border border-slate-300 rounded-lg text-center font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors" placeholder="Answer">
+                    <span class="feedback text-sm font-medium min-w-[100px] text-right"></span>
+                </div>
+            </div>
+
+            <!-- Q2 -->
+            <div class="question-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all">
+                <span class="font-medium text-slate-700">2. If <span class="text-indigo-600 font-semibold">a = 4</span>, find the value of <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-900 font-mono">3a</span></span>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <input type="number" data-answer="12" class="answer-input w-24 px-3 py-2 border border-slate-300 rounded-lg text-center font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors" placeholder="Answer">
+                    <span class="feedback text-sm font-medium min-w-[100px] text-right"></span>
+                </div>
+            </div>
+
+            <!-- Q3 -->
+            <div class="question-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all">
+                <span class="font-medium text-slate-700">3. If <span class="text-indigo-600 font-semibold">y = 6</span>, find the value of <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-900 font-mono">2y - 3</span></span>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <input type="number" data-answer="9" class="answer-input w-24 px-3 py-2 border border-slate-300 rounded-lg text-center font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors" placeholder="Answer">
+                    <span class="feedback text-sm font-medium min-w-[100px] text-right"></span>
+                </div>
+            </div>
+
+            <!-- Q4 -->
+            <div class="question-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all">
+                <span class="font-medium text-slate-700">4. If <span class="text-indigo-600 font-semibold">b = 14</span>, find the value of <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-900 font-mono">b / 2</span></span>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <input type="number" data-answer="7" class="answer-input w-24 px-3 py-2 border border-slate-300 rounded-lg text-center font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors" placeholder="Answer">
+                    <span class="feedback text-sm font-medium min-w-[100px] text-right"></span>
+                </div>
+            </div>
+
+            <!-- Q5 -->
+            <div class="question-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all">
+                <span class="font-medium text-slate-700">5. If <span class="text-indigo-600 font-semibold">m = 3</span> and <span class="text-indigo-600 font-semibold">n = 5</span>, find <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-900 font-mono">m + n</span></span>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <input type="number" data-answer="8" class="answer-input w-24 px-3 py-2 border border-slate-300 rounded-lg text-center font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors" placeholder="Answer">
+                    <span class="feedback text-sm font-medium min-w-[100px] text-right"></span>
+                </div>
+            </div>
+
+            <!-- Q6 -->
+            <div class="question-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all">
+                <span class="font-medium text-slate-700">6. If <span class="text-indigo-600 font-semibold">p = 8</span>, find the value of <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-900 font-mono">20 - p</span></span>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <input type="number" data-answer="12" class="answer-input w-24 px-3 py-2 border border-slate-300 rounded-lg text-center font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors" placeholder="Answer">
+                    <span class="feedback text-sm font-medium min-w-[100px] text-right"></span>
+                </div>
+            </div>
+
+            <!-- Q7 -->
+            <div class="question-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all">
+                <span class="font-medium text-slate-700">7. If <span class="text-indigo-600 font-semibold">x = 5</span>, find the value of <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-900 font-mono">x&sup2;</span></span>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <input type="number" data-answer="25" class="answer-input w-24 px-3 py-2 border border-slate-300 rounded-lg text-center font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors" placeholder="Answer">
+                    <span class="feedback text-sm font-medium min-w-[100px] text-right"></span>
+                </div>
+            </div>
+
+            <!-- Q8 -->
+            <div class="question-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all">
+                <span class="font-medium text-slate-700">8. If <span class="text-indigo-600 font-semibold">c = 4</span> and <span class="text-indigo-600 font-semibold">d = 3</span>, find <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-900 font-mono">cd</span></span>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <input type="number" data-answer="12" class="answer-input w-24 px-3 py-2 border border-slate-300 rounded-lg text-center font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors" placeholder="Answer">
+                    <span class="feedback text-sm font-medium min-w-[100px] text-right"></span>
+                </div>
+            </div>
+
+            <!-- Q9 -->
+            <div class="question-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all">
+                <span class="font-medium text-slate-700">9. If <span class="text-indigo-600 font-semibold">k = 7</span>, find the value of <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-900 font-mono">4k + 2</span></span>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <input type="number" data-answer="30" class="answer-input w-24 px-3 py-2 border border-slate-300 rounded-lg text-center font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors" placeholder="Answer">
+                    <span class="feedback text-sm font-medium min-w-[100px] text-right"></span>
+                </div>
+            </div>
+
+            <!-- Q10 -->
+            <div class="question-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all">
+                <span class="font-medium text-slate-700">10. If <span class="text-indigo-600 font-semibold">w = 10</span>, find the value of <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-900 font-mono">3w - 15</span></span>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <input type="number" data-answer="15" class="answer-input w-24 px-3 py-2 border border-slate-300 rounded-lg text-center font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors" placeholder="Answer">
+                    <span class="feedback text-sm font-medium min-w-[100px] text-right"></span>
+                </div>
+            </div>
+
+            <!-- Q11 -->
+            <div class="question-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all">
+                <span class="font-medium text-slate-700">11. If <span class="text-indigo-600 font-semibold">x = 3</span> and <span class="text-indigo-600 font-semibold">y = 4</span>, find <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-900 font-mono">2x + 3y</span></span>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <input type="number" data-answer="18" class="answer-input w-24 px-3 py-2 border border-slate-300 rounded-lg text-center font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors" placeholder="Answer">
+                    <span class="feedback text-sm font-medium min-w-[100px] text-right"></span>
+                </div>
+            </div>
+
+            <!-- Q12 -->
+            <div class="question-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all">
+                <span class="font-medium text-slate-700">12. If <span class="text-indigo-600 font-semibold">t = 12</span>, find the value of <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-900 font-mono">(t / 4) + 6</span></span>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <input type="number" data-answer="9" class="answer-input w-24 px-3 py-2 border border-slate-300 rounded-lg text-center font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors" placeholder="Answer">
+                    <span class="feedback text-sm font-medium min-w-[100px] text-right"></span>
+                </div>
+            </div>
+
+            <!-- Q13 -->
+            <div class="question-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all">
+                <span class="font-medium text-slate-700">13. If <span class="text-indigo-600 font-semibold">r = 10</span>, find the value of <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-900 font-mono">2(r - 3)</span></span>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <input type="number" data-answer="14" class="answer-input w-24 px-3 py-2 border border-slate-300 rounded-lg text-center font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors" placeholder="Answer">
+                    <span class="feedback text-sm font-medium min-w-[100px] text-right"></span>
+                </div>
+            </div>
+
+            <!-- Q14 -->
+            <div class="question-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all">
+                <span class="font-medium text-slate-700">14. If <span class="text-indigo-600 font-semibold">q = 9</span>, find the value of <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-900 font-mono">5q - 25</span></span>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <input type="number" data-answer="20" class="answer-input w-24 px-3 py-2 border border-slate-300 rounded-lg text-center font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors" placeholder="Answer">
+                    <span class="feedback text-sm font-medium min-w-[100px] text-right"></span>
+                </div>
+            </div>
+
+            <!-- Q15 -->
+            <div class="question-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all">
+                <span class="font-medium text-slate-700">15. If <span class="text-indigo-600 font-semibold">z = 6</span>, find the value of <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-900 font-mono">z&sup2; - 10</span></span>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <input type="number" data-answer="26" class="answer-input w-24 px-3 py-2 border border-slate-300 rounded-lg text-center font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors" placeholder="Answer">
+                    <span class="feedback text-sm font-medium min-w-[100px] text-right"></span>
+                </div>
+            </div>
+
+            <div class="text-center pt-6">
+                <button type="button" onclick="gradeQuiz()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-3 rounded-xl shadow-md transition-all transform hover:-translate-y-0.5">
+                    Submit Quiz
+                </button>
+            </div>
+        </form>
+
+        <!-- Result Box -->
+        <div id="result-container" class="mt-8 p-5 rounded-xl text-center font-semibold text-lg hidden shadow-sm"></div>
     </div>
 
-    <form id="quiz-form">
-        <!-- Question 1 -->
-        <div class="question-card">
-            <span class="question-text">1. If x = 3, find the value of x + 5</span>
-            <div>
-                <input type="number" name="q1" data-answer="8">
-                <span class="feedback"></span>
-            </div>
-        </div>
-
-        <!-- Question 2 -->
-        <div class="question-card">
-            <span class="question-text">2. If y = 4, find the value of 2y</span>
-            <div>
-                <input type="number" name="q2" data-answer="8">
-                <span class="feedback"></span>
-            </div>
-        </div>
-
-        <!-- Question 3 -->
-        <div class="question-card">
-            <span class="question-text">3. If a = 5, find the value of 3a - 2</span>
-            <div>
-                <input type="number" name="q3" data-answer="13">
-                <span class="feedback"></span>
-            </div>
-        </div>
-
-        <!-- Question 4 -->
-        <div class="question-card">
-            <span class="question-text">4. If b = 10, find the value of b / 2</span>
-            <div>
-                <input type="number" name="q4" data-answer="5">
-                <span class="feedback"></span>
-            </div>
-        </div>
-
-        <!-- Question 5 -->
-        <div class="question-card">
-            <span class="question-text">5. If c = 6 and d = 2, find the value of c + d</span>
-            <div>
-                <input type="number" name="q5" data-answer="8">
-                <span class="feedback"></span>
-            </div>
-        </div>
-
-        <!-- Question 6 -->
-        <div class="question-card">
-            <span class="question-text">6. If m = 7, find the value of 15 - m</span>
-            <div>
-                <input type="number" name="q6" data-answer="8">
-                <span class="feedback"></span>
-            </div>
-        </div>
-
-        <!-- Question 7 -->
-        <div class="question-card">
-            <span class="question-text">7. If x = 4, find the value of x squared (x&sup2;)</span>
-            <div>
-                <input type="number" name="q7" data-answer="16">
-                <span class="feedback"></span>
-            </div>
-        </div>
-
-        <!-- Question 8 -->
-        <div class="question-card">
-            <span class="question-text">8. If p = 3 and q = 4, find the value of pq</span>
-            <div>
-                <input type="number" name="q8" data-answer="12">
-                <span class="feedback"></span>
-            </div>
-        </div>
-
-        <!-- Question 9 -->
-        <div class="question-card">
-            <span class="question-text">9. If k = 5, find the value of 4k + 1</span>
-            <div>
-                <input type="number" name="q9" data-answer="21">
-                <span class="feedback"></span>
-            </div>
-        </div>
-
-        <!-- Question 10 -->
-        <div class="question-card">
-            <span class="question-text">10. If n = 8, find the value of 3n - 10</span>
-            <div>
-                <input type="number" name="q10" data-answer="14">
-                <span class="feedback"></span>
-            </div>
-        </div>
-
-        <!-- Question 11 -->
-        <div class="question-card">
-            <span class="question-text">11. If x = 2 and y = 5, find the value of 3x + 2y</span>
-            <div>
-                <input type="number" name="q11" data-answer="16">
-                <span class="feedback"></span>
-            </div>
-        </div>
-
-        <!-- Question 12 -->
-        <div class="question-card">
-            <span class="question-text">12. If t = 10, find the value of 2t - 5</span>
-            <div>
-                <input type="number" name="q12" data-answer="15">
-                <span class="feedback"></span>
-            </div>
-        </div>
-
-        <!-- Question 13 -->
-        <div class="question-card">
-            <span class="question-text">13. If a = 6, find the value of (a / 3) + 4</span>
-            <div>
-                <input type="number" name="q13" data-answer="6">
-                <span class="feedback"></span>
-            </div>
-        </div>
-
-        <!-- Question 14 -->
-        <div class="question-card">
-            <span class="question-text">14. If r = 9, find the value of 2(r - 4)</span>
-            <div>
-                <input type="number" name="q14" data-answer="10">
-                <span class="feedback"></span>
-            </div>
-        </div>
-
-        <!-- Question 15 -->
-        <div class="question-card">
-            <span class="question-text">15. If w = 7, find the value of 5w - 15</span>
-            <div>
-                <input type="number" name="q15" data-answer="20">
-                <span class="feedback"></span>
-            </div>
-        </div>
-
-        <div class="btn-container">
-            <button type="button" onclick="gradeQuiz()">Submit Quiz</button>
-        </div>
-    </form>
-
-    <div id="result-container"></div>
-
     <script>
+        let isSubmitted = false;
+
+        function evaluateInput(input) {
+            const val = input.value.trim();
+            const correctAnswer = input.dataset.answer;
+            const feedbackSpan = input.nextElementSibling;
+            const card = input.closest('.question-card');
+
+            // Reset styles
+            input.classList.remove('border-green-500', 'border-amber-400', 'border-red-500', 'bg-green-50', 'bg-amber-50', 'bg-red-50');
+            
+            if (val === "") {
+                if (isSubmitted) {
+                    input.classList.add('border-amber-400', 'bg-amber-50');
+                    feedbackSpan.textContent = "Unattempted";
+                    feedbackSpan.className = "feedback text-sm font-medium min-w-[100px] text-right text-amber-600";
+                } else {
+                    feedbackSpan.textContent = "";
+                }
+                return 'empty';
+            } else if (parseFloat(val) === parseFloat(correctAnswer)) {
+                input.classList.add('border-green-500', 'bg-green-50');
+                feedbackSpan.textContent = "✓ Correct";
+                feedbackSpan.className = "feedback text-sm font-medium min-w-[100px] text-right text-green-600";
+                return 'correct';
+            } else {
+                input.classList.add('border-red-500', 'bg-red-50');
+                feedbackSpan.textContent = "✗ Incorrect";
+                feedbackSpan.className = "feedback text-sm font-medium min-w-[100px] text-right text-red-600";
+                return 'incorrect';
+            }
+        }
+
         function gradeQuiz() {
-            const inputs = document.querySelectorAll('input[type="number"]');
+            isSubmitted = true;
+            const inputs = document.querySelectorAll('.answer-input');
             let score = 0;
-            const totalQuestions = inputs.length;
+            let attempted = 0;
 
             inputs.forEach(input => {
-                const userAnswer = parseFloat(input.value);
-                const correctAnswer = parseFloat(input.dataset.answer);
-                const feedbackSpan = input.nextElementSibling;
-
-                // Clear previous styles
-                input.style.borderColor = "#ccc";
-
-                if (!isNaN(userAnswer) && userAnswer === correctAnswer) {
+                const status = evaluateInput(input);
+                if (status === 'correct') {
                     score++;
-                    feedbackSpan.textContent = "✓";
-                    feedbackSpan.className = "feedback correct-indicator";
-                    input.style.borderColor = "#27ae60";
-                } else {
-                    feedbackSpan.textContent = "✗ (" + correctAnswer + ")";
-                    feedbackSpan.className = "feedback incorrect-indicator";
-                    input.style.borderColor = "#c0392b";
+                    attempted++;
+                } else if (status === 'incorrect') {
+                    attempted++;
                 }
             });
 
+            // Display results summary
             const resultDiv = document.getElementById('result-container');
-            resultDiv.style.display = "block";
-            
-            let message = `You scored ${score} out of ${totalQuestions}! `;
-            if (score === totalQuestions) {
-                message += "🌟 Fantastic job! Perfect score!";
-                resultDiv.style.backgroundColor = "#d4edda";
-                resultDiv.style.color = "#155724";
+            resultDiv.classList.remove('hidden');
+
+            let message = `You scored ${score} out of ${inputs.length}! `;
+            if (score === inputs.length) {
+                message += "🌟 Absolute perfection! Outstanding algebra skills!";
+                resultDiv.className = "mt-8 p-5 rounded-xl text-center font-semibold text-lg bg-green-100 text-green-800 shadow-sm";
             } else if (score >= 10) {
-                message += "👍 Great effort! Keep practicing.";
-                resultDiv.style.backgroundColor = "#e2e3e5";
-                resultDiv.style.color = "#383d41";
+                message += "👍 Great job! Review your unattempted or incorrect answers above.";
+                resultDiv.className = "mt-8 p-5 rounded-xl text-center font-semibold text-lg bg-indigo-100 text-indigo-800 shadow-sm";
             } else {
-                message += "📚 Keep trying! Review your substitution steps and try again.";
-                resultDiv.style.backgroundColor = "#f8d7da";
-                resultDiv.style.color = "#721c24";
+                message += "📚 Keep going! Edit your answers above to re-check.";
+                resultDiv.className = "mt-8 p-5 rounded-xl text-center font-semibold text-lg bg-amber-100 text-amber-800 shadow-sm";
             }
 
             resultDiv.textContent = message;
-            
-            // Scroll smoothly to results
             resultDiv.scrollIntoView({ behavior: 'smooth' });
         }
+
+        // Add live event listeners so feedback updates instantly if edited after submission
+        document.querySelectorAll('.answer-input').forEach(input => {
+            input.addEventListener('input', () => {
+                if (isSubmitted) {
+                    evaluateInput(input);
+                    
+                    // Optionally recalculate score live
+                    let score = 0;
+                    const inputs = document.querySelectorAll('.answer-input');
+                    inputs.forEach(inp => {
+                        const val = inp.value.trim();
+                        if (val !== "" && parseFloat(val) === parseFloat(inp.dataset.answer)) {
+                            score++;
+                        }
+                    });
+                    const resultDiv = document.getElementById('result-container');
+                    if (!resultDiv.classList.contains('hidden')) {
+                        resultDiv.textContent = `Live Score: ${score} out of ${inputs.length}. Keep tweaking your answers!`;
+                    }
+                }
+            });
+        });
     </script>
 
 </body>
