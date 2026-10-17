@@ -1,10 +1,4 @@
-# Maths Explorer (GitHub Pages starter)
-
-## Publish
-1. Create a GitHub repository.
-2. Upload `index.html` and `reveal.svg` to the repository root.
-3. In **Settings → Pages**, publish from the `main` branch and `/ (root)`.
-4. Open the published URL.
+# Maths Explorer
 
 ## Student use
 - 30 weekly missions, 10 questions per mission (300 total).
