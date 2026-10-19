@@ -9,7 +9,7 @@ window.MQ_CONFIG = {
 
   // Passcode for the admin page (admin.html, or type "admin" in the search bar).
   // NOTE: this is a soft lock. See README for how to make it properly private.
-  ADMIN_PASSCODE: "change-me",
+  ADMIN_PASSCODE: "ES",
 
   // ---- Remote tracking (so YOU can see activity from your own device) ----
   // Firebase Realtime Database URL, e.g. "https://my-maths-default-rtdb.firebaseio.com"
