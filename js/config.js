@@ -13,7 +13,7 @@ window.MQ_CONFIG = {
 
   // ---- Remote tracking (so YOU can see activity from your own device) ----
   // Firebase Realtime Database URL, e.g. "https://my-maths-default-rtdb.firebaseio.com"
-  FIREBASE_DB_URL: "",
+  FIREBASE_DB_URL: "https://mathquest-d3d0b-default-rtdb.asia-southeast1.firebasedatabase.app/",
 
   // ---- Phone alerts when she finishes a module (free, no account) ----
   // Install the free "ntfy" app, subscribe to this topic name. Make it long and random.
