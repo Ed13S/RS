@@ -1,0 +1,34 @@
+/* ============================================================
+   MathQuest settings  -  edit this file, then commit it to GitHub.
+   Everything here is optional; the site works with all of it blank
+   (progress + tracking then stay in the student's own browser).
+   ============================================================ */
+window.MQ_CONFIG = {
+  // Leave blank to ask for the student's first name on her first visit.
+  STUDENT_NAME: "",
+
+  // Passcode for the admin page (admin.html, or type "admin" in the search bar).
+  // NOTE: this is a soft lock. See README for how to make it properly private.
+  ADMIN_PASSCODE: "change-me",
+
+  // ---- Remote tracking (so YOU can see activity from your own device) ----
+  // Firebase Realtime Database URL, e.g. "https://my-maths-default-rtdb.firebaseio.com"
+  FIREBASE_DB_URL: "",
+
+  // ---- Phone alerts when she finishes a module (free, no account) ----
+  // Install the free "ntfy" app, subscribe to this topic name. Make it long and random.
+  NTFY_TOPIC: "",
+  NOTIFY_ON_LEAVE: false,          // also ping you every time she leaves the page
+
+  // ---- AI clues ("Professor Pip") ----
+  // Anthropic API key. WARNING: anything in this file is public once it is on GitHub Pages.
+  // Use a key with a small spend limit, or use CLUE_PROXY_URL instead (see README).
+  CLUE_API_KEY: "",
+  CLUE_MODEL: "claude-haiku-5-5",
+  CLUE_PROXY_URL: "",              // optional: your own endpoint that holds the key
+  MAX_CLUES: 3,                    // clues allowed per question
+
+  // ---- Course layout ----
+  DAYS_PER_WEEK: 1,                // 1 = "Week 1, Week 2 ..."; 5 = "Week 1 Day 1 ... Day 5"
+  UNLOCK_ALL: false                // true = every module open from the start (handy for testing)
+};

@@ -1,17 +1,20 @@
-# Maths Explorer
+# MathQuest
 
-## Student use
-- 30 weekly missions, 10 questions per mission (300 total).
-- Correct answers turn green and uncover a tile of the adventure picture.
-- Progress is saved in the current browser using localStorage.
-- The student can type `admin` in the search field to open the guardian dashboard.
+A 30-module maths catch-up course (30 questions per module, ~900 questions) with a hidden picture that reveals tile by tile, a "Professor Pip" clue helper, daily jokes/riddles, and an admin page.
 
-## Important limitations
-This is a static front-end demo, not a secure locked-down browser or remote monitoring service.
-- A GitHub Pages site cannot keep a secret API key. Any key placed in HTML/JavaScript can be copied and abused. This version uses built-in hints, with no API key.
-- Admin logs and progress are stored only in the browser/device where the student works. They are not sent to you automatically and will not sync between devices.
-- The page can record `visibilitychange` and window-blur events, but cannot prove exactly what the child did elsewhere or prevent leaving the page. Browser/OS controls are needed for actual kiosk/locked-down behaviour.
-- There is no password protecting the `admin` view in this demo. Anyone who knows the keyword on that device can open it. For private reports, use authentication plus a backend (e.g. a serverless function and database) and keep any AI API key on the server.
+## Deploy
+1. Put these files in a GitHub repo (root). Settings → Pages → Deploy from branch `main` / root.
+2. Open `https://<user>.github.io/<repo>/`.
 
-## Course design
-The plan is 30 weekly missions that gradually build from foundational skills toward more advanced topics. It intentionally avoids isolated basic addition/subtraction/multiplication/division drills; these operations appear inside missing-number puzzles and multi-step word problems. The starter includes 10 questions per mission, each with an answer, worked explanation, and hint. Review question wording and answers before assigning it as formal assessment.
+## Configure (`js/config.js`)
+- `ADMIN_PASSCODE` – change it. Type `admin` in the home-page search bar to reach `admin.html`.
+- `FIREBASE_DB_URL` – create a Firebase Realtime Database (test-mode rules), paste its URL. Lets the admin page see activity from her device. Note: the URL is public.
+- `NTFY_TOPIC` – pick a long random topic, install the ntfy app, subscribe. You get a phone alert when she finishes a module (`NOTIFY_ON_LEAVE:true` also alerts on leaving the page).
+- `CLUE_API_KEY` – Anthropic key for clues. It is visible to anyone who views the page source, and GitHub may auto-revoke it. Safer: deploy `worker.js` on Cloudflare Workers (key stored as a secret) and set `CLUE_PROXY_URL`. Set a spend limit either way. Without a key, built-in hints are used.
+- `DAYS_PER_WEEK`, `UNLOCK_ALL` – pacing / unlock everything for testing.
+
+## Tracking and limits
+Logged: tab switches, window blur, fullscreen exit, idle, copy/paste/right-click, blocked shortcuts, devtools heuristic, per-question tries, wrong answers, time and clues. A web page cannot be truly locked down; this is monitoring, not prevention. The admin passcode is a soft client-side lock.
+
+## Tests
+`node test/course-test.js` checks all 900 questions.
