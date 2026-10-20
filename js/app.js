@@ -14,7 +14,8 @@
   const mins = ms => { const s = Math.round(ms / 1000); return s >= 60 ? Math.floor(s / 60) + ' min ' + (s % 60) + ' s' : s + ' s'; };
   const okCount = m => m ? Object.values(m.q || {}).filter(x => x.ok).length : 0;
   const resolved = m => m ? Object.values(m.q || {}).filter(x => x.ok || x.rev).length : 0;
-  const unlocked = i => CFG.UNLOCK_ALL || i === 0 || !!(st.mods[i - 1] && st.mods[i - 1].done);
+  let ctl = {}, ctlSig = '';
+  const unlocked = i => { const a = ctl.access && ctl.access[i]; if (a === 'open') return true; if (a === 'lock') return false; return !!ctl.all || CFG.UNLOCK_ALL || i === 0 || !!(st.mods[i - 1] && st.mods[i - 1].done); };
   const toast = msg => { const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2600); };
   function ding(ok) {
     if (muted) return; try { const ctx = ding.c || (ding.c = new (window.AudioContext || window.webkitAudioContext)()), o = ctx.createOscillator(), g = ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.type = 'sine'; const t0 = ctx.currentTime; (ok ? [660, 880, 1100] : [220]).forEach((f, i) => o.frequency.setValueAtTime(f, t0 + i * .09)); g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(.15, t0 + .02); g.gain.exponentialRampToValueAtTime(.0001, t0 + (ok ? .34 : .2)); o.start(t0); o.stop(t0 + .4); } catch (e) { }
@@ -35,6 +36,37 @@
   }
   function summary() { const d = {}; Object.keys(st.mods).forEach(k => { const x = st.mods[k]; d[k] = { ok: okCount(x), done: !!x.done, score: x.score || 0, ms: x.ms || 0, leaves: x.leaves || 0, away: x.awayMs || 0, clues: Object.values(x.q || {}).reduce((a, b) => a + (b.clues || 0), 0), at: x.finishedAt || 0 }; }); return d; }
   function cloudSave() { T.saveCloudProgress(st); T.saveProfile({ modules: summary(), totalDone: Object.values(st.mods).filter(x => x.done).length }); }
+
+  /* ---------- teacher controls (admin page -> Firebase -> here) ---------- */
+  function applyCmd(c) {
+    const i = +c.mod, ms = () => st.mods[i] || (st.mods[i] = { q: {}, done: false, ms: 0, leaves: 0, awayMs: 0 });
+    const mark = (m, q) => { const x = m.q[q.id] || (m.q[q.id] = { att: 0, wrong: [], clues: 0 }); x.ok = true; x.rev = false; x.adm = 1; };
+    if (c.type === 'resetMod') delete st.mods[i];
+    else if (c.type === 'completeMod') { const m = ms(); C.buildModule(i).questions.forEach(q => mark(m, q)); m.done = true; m.score = okCount(m); m.finishedAt = m.finishedAt || Date.now(); m.adm = 1; }
+    else if (c.type === 'completeQ') { const m = ms(), q = C.buildModule(i).questions.find(x => x.id === c.qid); if (q) mark(m, q); }
+    else if (c.type === 'resetQ') { const m = st.mods[i]; if (m && m.q) { delete m.q[c.qid]; m.done = false; delete m.finishedAt; } }
+  }
+  function wipeDevice() {
+    const old = T.sid; clearTimeout(saveT); Guard.stop();
+    ['mq_state_v2', 'mq_name', 'mq_queue', 'mq_events_local', 'mq_applied'].forEach(k => { try { localStorage.removeItem(k); } catch (e) { } });
+    T.queue = []; T.sid = ''; st = { name: '', mods: {} }; mod = null; mst = null; ctl = {}; ctlSig = ''; T.ackWipe(old); welcome();
+  }
+  async function syncCtl(quiet) {
+    if (!st.name || !T.sid) return;
+    const c = await T.loadControl(); if (c === false) return;
+    const before = ctlSig; ctl = c || {}; ctlSig = JSON.stringify([ctl.access, ctl.all]);
+    if (ctl.wipe) { wipeDevice(); return; }
+    const applied = LS.get('mq_applied', []); let n = 0, hitCur = false;
+    Object.keys(ctl.cmds || {}).sort().forEach(k => {
+      const c2 = ctl.cmds[k]; if (!applied.includes(k)) { applyCmd(c2); applied.push(k); n++; if (mod && +c2.mod === mi) hitCur = true; T.log('admin_cmd', { cmd: c2.type, mod: +c2.mod + 1, qid: c2.qid || '' }); }
+      T.ackCmd(k);
+    });
+    if (n) { LS.set('mq_applied', applied.slice(-300)); save(true); }
+    if (quiet) return;
+    if (hitCur) { toast('Your teacher updated this mission 👩‍🏫'); home(); }
+    else if ((n || before !== ctlSig) && !mod && st.name) home();
+  }
+  setInterval(() => { if (!document.hidden) syncCtl(); }, 10000);
 
   /* ---------- search bar: type "admin" ---------- */
   function searchHTML() { return `<form class="search" id="sform" role="search"><input id="sin" type="search" placeholder="Search…" aria-label="Search" autocomplete="off"></form>`; }
@@ -60,7 +92,7 @@
     const cloud = await T.loadCloudProgress();
     if (cloud && cloud.mods) { const cs = Object.values(cloud.mods).reduce((a, m) => a + okCount(m), 0), ls = Object.values(st.mods).reduce((a, m) => a + okCount(m), 0); if (cs > ls) { st.mods = cloud.mods; save(true); } }
     T.log('session_start', { ua: navigator.userAgent.slice(0, 140), screen: innerWidth + 'x' + innerHeight, doneModules: Object.values(st.mods).filter(x => x.done).length });
-    T.saveProfile({ modules: summary() }); home();
+    await syncCtl(true); if (!st.name) return; T.saveProfile({ modules: summary() }); home();
   }
   function home() {
     mod = null; Guard.stop();
@@ -289,7 +321,7 @@
       if (!Guard.active || Guard.away || (mst && mst.done)) return; if (setCurSafe()) { }
       Guard.away = { t: t0, reason, q: curN }; mst.leaves = (mst.leaves || 0) + 1;
       T.log('leave', Object.assign(Guard.ctx(), { reason })); T.flush(true);
-      if (CFG.NOTIFY_ON_LEAVE) T.notify(`${st.name} left the page`, `${label(mi)}, question ${curN + 1} (${reason})`, ['eyes'], 3); save(true);
+      if (CFG.NOTIFY_ON_LEAVE !== false) T.notify(`${st.name} left the page`, `${label(mi)}, question ${curN + 1} (${reason})`, ['eyes'], 3); save(true);
     },
     back() {
       clearTimeout(Guard.blurT); if (!Guard.away || document.hidden) return; const a = Guard.away, dur = Date.now() - a.t; Guard.away = null; mst.awayMs = (mst.awayMs || 0) + dur;
@@ -304,7 +336,7 @@
       if (bad) { e.preventDefault(); e.stopPropagation(); const now = Date.now(); if (now - (Guard.last[bad] || 0) > 3000) { Guard.last[bad] = now; T.log('blocked', Object.assign(Guard.ctx(), { kind: 'key:' + bad })); } }
     },
     print() { T.log('blocked', Object.assign(Guard.ctx(), { kind: 'print' })); },
-    close() { if (Guard.active && mst && !mst.done) { T.log('page-closed', Guard.ctx()); T.flush(true); save(true); } },
+    close() { if (Guard.active && mst && !mst.done) { T.log('page-closed', Guard.ctx()); T.flush(true); if (CFG.NOTIFY_ON_LEAVE !== false && !Guard.away) T.notify(`${st.name} closed the page`, `${label(mi)}, question ${curN + 1}`, ['x'], 4); save(true); } },
     act() { const now = Date.now(); if (Guard.idle) { T.log('idle-end', Object.assign(Guard.ctx(), { idleMs: now - Guard.lastAct })); Guard.idle = false; curSince = now; } Guard.lastAct = now; },
     timer() {
       if (!Guard.active || !mst) return; const now = Date.now();

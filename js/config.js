@@ -18,7 +18,7 @@ window.MQ_CONFIG = {
   // ---- Phone alerts when she finishes a module (free, no account) ----
   // Install the free "ntfy" app, subscribe to this topic name. Make it long and random.
   NTFY_TOPIC: "mathquest",
-  NOTIFY_ON_LEAVE: false,          // also ping you every time she leaves the page
+  NOTIFY_ON_LEAVE: true,           // also ping you every time she leaves the page
 
   // ---- AI clues ("Professor Pip") ----
   // Anthropic API key. WARNING: anything in this file is public once it is on GitHub Pages.

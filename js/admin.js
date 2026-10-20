@@ -9,8 +9,18 @@
   const fmtT = t => new Date(t).toLocaleString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', second: '2-digit' });
   const dur = ms => { const s = Math.round(ms / 1000); if (s < 60) return s + 's'; const m = Math.floor(s / 60); return m < 60 ? m + 'm ' + (s % 60) + 's' : Math.floor(m / 60) + 'h ' + (m % 60) + 'm'; };
   const ago = t => t ? dur(Date.now() - t) + ' ago' : '–';
-  let data = { events: {}, students: {}, progress: {}, source: 'local' }, sel = '', selMod = -1, filter = 'all', timer = 0;
+  let data = { events: {}, students: {}, progress: {}, control: {}, source: 'local' }, sel = '', selMod = -1, filter = 'all', timer = 0;
   const cache = {};
+  const cloud = () => !!db;
+  const send = (method, path, body) => fetch(`${db}/mathquest/${path}.json`, { method, body: body === undefined ? undefined : JSON.stringify(body) }).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); });
+  const cmd = (sid, c) => send('PUT', `control/${encodeURIComponent(sid)}/cmds/${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, Object.assign({ t: Date.now() }, c));
+  const access = (sid, i) => { const a = data.control[sid] && data.control[sid].access; return a ? a[i] : undefined; };
+  async function act(fn, msg) { if (!cloud()) { alert('Controls need Firebase set up (FIREBASE_DB_URL in js/config.js).'); return; } try { await fn(); await load(); render(); if (msg) flash(msg); } catch (e) { alert('Failed: ' + e.message + '. Check the Firebase rules.'); } }
+  function flash(m) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), 3200); }
+  async function delUser(sid) {
+    if (!confirm(`Delete ${nameOf(sid)} and ALL their progress and activity? This cannot be undone.`)) return;
+    await act(async () => { await Promise.all(['events', 'progress', 'students'].map(k => send('DELETE', `${k}/${encodeURIComponent(sid)}`))); await send('PUT', `control/${encodeURIComponent(sid)}`, { wipe: Date.now() }); if (sel === sid) sel = ''; }, 'Deleted. Her device resets next time it is online on the site.');
+  }
 
   function gate() {
     if (sessionStorage.getItem('mq_admin_ok') === '1') return start();
@@ -20,7 +30,7 @@
 
   async function load() {
     if (db) {
-      try { const r = await fetch(`${db}/mathquest.json`); if (!r.ok) throw new Error('HTTP ' + r.status); const j = (await r.json()) || {}; data = { events: j.events || {}, students: j.students || {}, progress: j.progress || {}, source: 'cloud' }; }
+      try { const r = await fetch(`${db}/mathquest.json`); if (!r.ok) throw new Error('HTTP ' + r.status); const j = (await r.json()) || {}; data = { events: j.events || {}, students: j.students || {}, progress: j.progress || {}, control: j.control || {}, source: 'cloud' }; }
       catch (e) { data = localData(); data.error = 'Could not reach Firebase (' + e.message + '). Check FIREBASE_DB_URL and the database rules. Showing this browser only.'; }
     } else data = localData();
     if (!sel || (!data.events[sel] && !data.progress[sel])) { const ids = studentIds(); sel = ids[0] || ''; }
@@ -53,21 +63,28 @@
     if (!sel) { APP.innerHTML = h + `<div class="card">No activity yet. Once she starts a mission it appears here.</div>`; bind(); return; }
     const stats = Array.from({ length: C.count }, (_, i) => modStats(sel, i)), doneN = stats.filter(s => s.done).length, leavesT = stats.reduce((a, s) => a + s.leaves, 0), awayT = stats.reduce((a, s) => a + s.away, 0), okT = stats.reduce((a, s) => a + s.ok, 0), cluesT = stats.reduce((a, s) => a + s.clues, 0), last = e.length ? e[e.length - 1].t : 0;
     h += `<div class="kpis"><div class="kpi"><b>${doneN}/${C.count}</b>modules finished</div><div class="kpi"><b>${okT}</b>questions right</div><div class="kpi"><b style="color:${leavesT ? '#c0392b' : '#1f9d62'}">${leavesT}</b>times left the page</div><div class="kpi"><b>${dur(awayT)}</b>total time away</div><div class="kpi"><b>${cluesT}</b>clues asked</div><div class="kpi"><b style="font-size:22px">${ago(last)}</b>last active</div></div>
-    <div class="card"><h3 style="margin-top:0">Modules <span class="small">(green = finished, yellow = in progress, red line = left the page)</span></h3><div class="mgrid">${stats.map((s, i) => `<div class="mcell ${s.done ? 'done' : s.started ? 'part' : ''} ${s.leaves ? 'flag' : ''} ${i === selMod ? 'sel' : ''}" data-m="${i}" title="${esc(C.PLAN[i][0])}">${i + 1}<br><span class="small">${s.started ? s.ok + '/30' : '–'}</span></div>`).join('')}</div></div>`;
+    <div class="card"><h3 style="margin-top:0">Modules <span class="small">(green = finished, yellow = in progress, red line = left the page)</span></h3><div class="mgrid">${stats.map((s, i) => `<div class="mcell ${s.done ? 'done' : s.started ? 'part' : ''} ${s.leaves ? 'flag' : ''} ${i === selMod ? 'sel' : ''}" data-m="${i}" title="${esc(C.PLAN[i][0])}">${i + 1}<br><span class="small">${s.started ? s.ok + '/30' : '–'}</span>${access(sel, i) === 'open' ? '<span class="small">🔓</span>' : access(sel, i) === 'lock' ? '<span class="small">🔒</span>' : ''}</div>`).join('')}</div>
+    <div class="stats" style="margin-top:10px"><button class="small" data-act="openall">🔓 Open all modules</button><button class="small ghost" data-act="auto">↩ Back to automatic (clears 🔓/🔒)</button><span class="small">Click a module to open, lock, finish or reset it. 🔓 = forced open, 🔒 = forced locked.</span></div></div>
+    ${studentsCard(ids)}`;
     if (selMod >= 0) h += detail(sel, selMod, stats[selMod]);
     h += leaveTable(sel) + timeline(e);
     APP.innerHTML = h; bind();
   }
   function detail(sid, i, s) {
     const m = buildMod(i), p = s.p, es = s.es, comp = es.filter(x => x.type === 'module_complete').pop();
-    let h = `<div class="card"><h3 style="margin-top:0">${label(i)}: ${esc(m.title)} ${s.done ? '<span class="tag green">finished</span>' : '<span class="tag amber">in progress</span>'}</h3><p class="small">Score ${s.ok}/30 · active time ${dur(s.ms || (comp ? comp.durationMs : 0))} · left page ${s.leaves}× (${dur(s.away)} away) · ${s.clues} clues · ${s.blocked} blocked actions (copy / paste / shortcuts)</p>
-    <div style="overflow:auto;max-height:560px"><table class="atable"><thead><tr><th>#</th><th>Topic</th><th>Question</th><th>Result</th><th>Tries</th><th>Time</th><th>Wrong answers</th><th>Clues</th><th>Left page here</th></tr></thead><tbody>`;
+    let h = `<div class="card"><h3 style="margin-top:0">${label(i)}: ${esc(m.title)} ${s.done ? '<span class="tag green">finished</span>' : '<span class="tag amber">in progress</span>'}</h3><div class="stats" style="margin:6px 0"><button class="small" data-act="mopen" data-m="${i}">🔓 Force open</button><button class="small ghost" data-act="mlock" data-m="${i}">🔒 Force lock</button><button class="small ghost" data-act="mauto" data-m="${i}">↩ Automatic</button><button class="small" data-act="mdone" data-m="${i}">✅ Mark whole module complete</button><button class="small ghost" data-act="mreset" data-m="${i}" style="color:#c0392b">⟲ Reset module</button><span class="small">Now: ${access(sid, i) === 'open' ? 'forced open' : access(sid, i) === 'lock' ? 'forced locked' : 'automatic'}</span></div><p class="small">Changes reach her device within ~10 seconds if she is on the site, otherwise next time she opens it.</p>
+    <p class="small">Score ${s.ok}/30 · active time ${dur(s.ms || (comp ? comp.durationMs : 0))} · left page ${s.leaves}× (${dur(s.away)} away) · ${s.clues} clues · ${s.blocked} blocked actions (copy / paste / shortcuts)</p>
+    <div style="overflow:auto;max-height:560px"><table class="atable"><thead><tr><th>#</th><th>Topic</th><th>Question</th><th>Result</th><th>Tries</th><th>Time</th><th>Wrong answers</th><th>Clues</th><th>Left page here</th><th>Admin</th></tr></thead><tbody>`;
     m.questions.forEach(q => {
       const x = p && p.q ? p.q[q.id] : null, byEv = es.filter(e => e.qid === q.id), a = es.filter(e => e.type === 'answer' && e.qid === q.id), wrong = x ? x.wrong || [] : a.filter(e => !e.ok).map(e => e.given), lv = es.filter(e => e.type === 'leave' && e.q === q.n + 1).length;
       const ok = x ? x.ok : a.some(e => e.ok), rev = x ? x.rev : es.some(e => e.type === 'reveal' && e.qid === q.id), tries = x ? x.att || 0 : a.length, cl = x ? x.clues || 0 : es.filter(e => e.type === 'clue' && e.qid === q.id).length;
-      h += `<tr><td>${q.n + 1}</td><td>${C.TOPICS[q.topic][1]} ${esc(C.TOPICS[q.topic][0])}</td><td>${esc(M.strip(q.prompt).slice(0, 150))}<div class="small">Answer: ${esc(M.displayAnswer(q))}</div></td><td>${ok ? '<span class="tag green">right</span>' : rev ? '<span class="tag amber">shown</span>' : tries ? '<span class="tag red">not yet</span>' : '<span class="tag grey">–</span>'}</td><td>${tries || ''}</td><td>${x && x.ms ? dur(x.ms) : ''}</td><td>${esc(wrong.slice(0, 6).join(', '))}</td><td>${cl || ''}</td><td>${lv ? '<span class="tag red">' + lv + '×</span>' : ''}</td></tr>`;
+      h += `<tr><td>${q.n + 1}</td><td>${C.TOPICS[q.topic][1]} ${esc(C.TOPICS[q.topic][0])}</td><td>${esc(M.strip(q.prompt).slice(0, 150))}<div class="small">Answer: ${esc(M.displayAnswer(q))}</div></td><td>${ok ? '<span class="tag green">right</span>' : rev ? '<span class="tag amber">shown</span>' : tries ? '<span class="tag red">not yet</span>' : '<span class="tag grey">–</span>'}</td><td>${tries || ''}</td><td>${x && x.ms ? dur(x.ms) : ''}</td><td>${esc(wrong.slice(0, 6).join(', '))}</td><td>${cl || ''}</td><td>${lv ? '<span class="tag red">' + lv + '×</span>' : ''}</td><td style="white-space:nowrap">${ok ? '' : `<button class="small" data-act="qdone" data-m="${i}" data-q="${esc(q.id)}" title="Mark right">✔</button> `}${tries || ok || rev ? `<button class="small ghost" data-act="qreset" data-m="${i}" data-q="${esc(q.id)}" title="Reset question">⟲</button>` : ''}</td></tr>`;
     });
     return h + '</tbody></table></div></div>';
+  }
+  function studentsCard(ids) {
+    if (!ids.length) return '';
+    return `<div class="card"><h3 style="margin-top:0">Students</h3><table class="atable"><thead><tr><th>Name</th><th>Finished</th><th>Last active</th><th></th></tr></thead><tbody>${ids.map(id => { const es = evs(id), d = Object.values((data.progress[id] || {}).mods || {}).filter(m => m && m.done).length; return `<tr><td>${esc(nameOf(id))}</td><td>${d}/${C.count}</td><td>${es.length ? ago(es[es.length - 1].t) : '–'}</td><td><button class="small ghost" data-act="view" data-s="${esc(id)}">View</button> <button class="small ghost" data-act="del" data-s="${esc(id)}" style="color:#c0392b">🗑 Delete</button></td></tr>`; }).join('')}</tbody></table></div>`;
   }
   function leaveTable(sid) {
     const es = evs(sid), rows = es.filter(e => e.type === 'leave').reverse();
@@ -81,7 +98,7 @@
     });
     return h + '</tbody></table></div></div>';
   }
-  const kindTag = e => ({ leave: ['red', 'left page'], return: ['amber', 'came back'], answer: [e.ok ? 'green' : 'grey', e.ok ? 'right' : 'wrong'], clue: ['blue', 'clue'], reveal: ['amber', 'shown answer'], blocked: ['amber', 'blocked: ' + (e.kind || '')], module_complete: ['green', 'FINISHED'], module_start: ['blue', 'started'], module_resume: ['blue', 'resumed'], 'fullscreen-exit': ['red', 'left full screen'], 'devtools-suspected': ['red', 'dev tools?'], idle: ['grey', 'idle'], 'idle-end': ['grey', 'back from idle'], 'page-closed': ['red', 'closed page'], session_start: ['grey', 'opened site'], module_exit: ['grey', 'left module'], riddle_reveal: ['grey', 'riddle'] }[e.type] || ['grey', e.type]);
+  const kindTag = e => ({ leave: ['red', 'left page'], return: ['amber', 'came back'], answer: [e.ok ? 'green' : 'grey', e.ok ? 'right' : 'wrong'], clue: ['blue', 'clue'], reveal: ['amber', 'shown answer'], blocked: ['amber', 'blocked: ' + (e.kind || '')], module_complete: ['green', 'FINISHED'], module_start: ['blue', 'started'], module_resume: ['blue', 'resumed'], 'fullscreen-exit': ['red', 'left full screen'], 'devtools-suspected': ['red', 'dev tools?'], idle: ['grey', 'idle'], 'idle-end': ['grey', 'back from idle'], 'page-closed': ['red', 'closed page'], session_start: ['grey', 'opened site'], module_exit: ['grey', 'left module'], riddle_reveal: ['grey', 'riddle'], admin_cmd: ['blue', 'teacher: ' + (e.cmd || '')] }[e.type] || ['grey', e.type]);
   function timeline(es) {
     const f = { all: () => true, leaves: e => ['leave', 'return', 'page-closed', 'fullscreen-exit', 'devtools-suspected', 'idle', 'idle-end'].includes(e.type), wrong: e => e.type === 'answer' && !e.ok, clues: e => e.type === 'clue' || e.type === 'reveal', blocked: e => e.type === 'blocked', done: e => ['module_complete', 'module_start', 'module_resume', 'module_exit'].includes(e.type) }[filter];
     const rows = es.filter(f).reverse().slice(0, 300);
@@ -101,6 +118,19 @@
     if ($('flt')) $('flt').onchange = e => { filter = e.target.value; render(); };
     if ($('csv')) $('csv').onclick = exportCsv;
     if ($('tn')) $('tn').onclick = () => { if (!CFG.NTFY_TOPIC) { alert('Set NTFY_TOPIC in js/config.js first (see README).'); return; } fetch('https://ntfy.sh/', { method: 'POST', body: JSON.stringify({ topic: CFG.NTFY_TOPIC, title: 'MathQuest test', message: 'Alerts are working! 🎉', tags: ['tada'] }) }).then(() => alert('Sent. Check your phone.')).catch(() => alert('Could not send.')); };
+    document.querySelectorAll('[data-act]').forEach(b => b.onclick = e => { e.stopPropagation(); const a = b.dataset.act, m = +b.dataset.m, q = b.dataset.q, sid = sel, S = encodeURIComponent(sel);
+      if (a === 'view') { sel = b.dataset.s; selMod = -1; render(); window.scrollTo(0, 0); }
+      else if (a === 'del') delUser(b.dataset.s);
+      else if (a === 'openall') act(() => send('PUT', `control/${S}/all`, true), 'All modules opened.');
+      else if (a === 'auto') act(async () => { await send('DELETE', `control/${S}/all`); await send('DELETE', `control/${S}/access`); }, 'Back to automatic unlocking.');
+      else if (a === 'mopen') act(() => send('PUT', `control/${S}/access/${m}`, 'open'), `Module ${m + 1} forced open.`);
+      else if (a === 'mlock') act(() => send('PUT', `control/${S}/access/${m}`, 'lock'), `Module ${m + 1} locked.`);
+      else if (a === 'mauto') act(() => send('DELETE', `control/${S}/access/${m}`), `Module ${m + 1} automatic.`);
+      else if (a === 'mdone') { if (confirm(`Mark every question in module ${m + 1} as correct and finish it?`)) act(() => cmd(sid, { type: 'completeMod', mod: m }), 'Queued: module will be marked complete.'); }
+      else if (a === 'mreset') { if (confirm(`Erase her progress in module ${m + 1}?`)) act(() => cmd(sid, { type: 'resetMod', mod: m }), 'Queued: module will be reset.'); }
+      else if (a === 'qdone') act(() => cmd(sid, { type: 'completeQ', mod: m, qid: q }), 'Queued: question marked right.');
+      else if (a === 'qreset') act(() => cmd(sid, { type: 'resetQ', mod: m, qid: q }), 'Queued: question reset.');
+    });
     document.querySelectorAll('.mcell').forEach(c => c.onclick = () => { selMod = selMod === +c.dataset.m ? -1 : +c.dataset.m; render(); if (selMod >= 0) window.scrollTo({ top: document.querySelector('.mgrid').offsetTop + 160, behavior: 'smooth' }); });
   }
   function exportCsv() {

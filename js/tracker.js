@@ -40,8 +40,14 @@
     },
     notify(title, message, tags, priority) {
       const topic = CFG().NTFY_TOPIC; if (!topic) return;
-      fetch('https://ntfy.sh/', { method: 'POST', body: JSON.stringify({ topic, title, message, tags: tags || ['books'], priority: priority || 3 }) }).catch(() => { });
-    }
+      fetch('https://ntfy.sh/', { method: 'POST', keepalive: true, body: JSON.stringify({ topic, title, message, tags: tags || ['books'], priority: priority || 3 }) }).catch(() => { });
+    },
+    loadControl() {
+      const url = dbUrl(); if (!url || !T.sid) return Promise.resolve(false);
+      return fetch(`${url}/mathquest/control/${encodeURIComponent(T.sid)}.json`, { cache: 'no-store' }).then(r => r.ok ? r.json() : false).catch(() => false);
+    },
+    ackCmd(k) { const url = dbUrl(); if (url && T.sid) fetch(`${url}/mathquest/control/${encodeURIComponent(T.sid)}/cmds/${encodeURIComponent(k)}.json`, { method: 'DELETE' }).catch(() => { }); },
+    ackWipe(sid) { const url = dbUrl(); if (url && sid) fetch(`${url}/mathquest/control/${encodeURIComponent(sid)}/wipe.json`, { method: 'DELETE' }).catch(() => { }); }
   };
   g.addEventListener && g.addEventListener('pagehide', () => T.flush(true));
   g.addEventListener && g.addEventListener('online', () => T.flush());
