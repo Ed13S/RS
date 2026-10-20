@@ -294,6 +294,7 @@
   }
 
   /* ---------- Guard: focus-mode tracking ---------- */
+  const TOUCH = (navigator.maxTouchPoints || 0) > 1 || /iPad|iPhone|Android/i.test(navigator.userAgent);
   const Guard = {
     active: false, away: null, paused: false, fsWanted: false, last: {}, lastAct: Date.now(), idle: false, blurT: 0, tick: 0, dev: 0,
     start() {
@@ -316,7 +317,7 @@
     goFullscreen(manual) { const el = document.documentElement; if (el.requestFullscreen) { Guard.fsWanted = true; el.requestFullscreen().catch(() => { Guard.fsWanted = false; if (manual) toast('Full screen is not available here.'); }); } },
     fsChange() { if (!document.fullscreenElement && Guard.fsWanted && Guard.active && !(mst && mst.done)) { T.log('fullscreen-exit', Guard.ctx()); showOv(`<div style="font-size:48px">🖥️</div><h2>Back to full screen!</h2><p>Mission mode works best in full screen. Your teacher has been told.</p><button id="fsback" class="fun">Back to my mission 🚀</button>`); $('#fsback').onclick = () => { hideOv(); Guard.goFullscreen(); }; } },
     vis() { if (document.hidden) Guard.leave('tab-hidden', Date.now()); else Guard.back(); },
-    blur() { clearTimeout(Guard.blurT); const t0 = Date.now(); Guard.blurT = setTimeout(() => { if (!document.hasFocus()) Guard.leave('window-blur', t0); }, 1200); },
+    blur() { if (TOUCH) return; const ae = document.activeElement; if (ae && /^(input|textarea|select)$/i.test(ae.tagName)) return; clearTimeout(Guard.blurT); const t0 = Date.now(); Guard.blurT = setTimeout(() => { if (!document.hasFocus()) Guard.leave('window-blur', t0); }, 1200); },
     leave(reason, t0) {
       if (!Guard.active || Guard.away || (mst && mst.done)) return; if (setCurSafe()) { }
       Guard.away = { t: t0, reason, q: curN }; mst.leaves = (mst.leaves || 0) + 1;
@@ -344,7 +345,7 @@
         if (now - Guard.lastAct > 150000 && !Guard.idle) { Guard.idle = true; T.log('idle', Guard.ctx()); }
         if (!Guard.idle) { mst.ms = (mst.ms || 0) + 1000; const t = $('#timer'); if (t) t.textContent = '⏱ ' + mm(mst.ms); if (mst.ms % 15000 === 0) save(); }
       }
-      if (now - Guard.dev > 120000 && !document.fullscreenElement && (window.outerWidth - window.innerWidth > 220 || window.outerHeight - window.innerHeight > 300)) { Guard.dev = now; T.log('devtools-suspected', Guard.ctx()); }
+      if (!TOUCH && now - Guard.dev > 120000 && !document.fullscreenElement && (window.outerWidth - window.innerWidth > 220 || window.outerHeight - window.innerHeight > 300)) { Guard.dev = now; T.log('devtools-suspected', Guard.ctx()); }
     }
   };
   function setCurSafe() { return false; }
