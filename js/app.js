@@ -162,7 +162,7 @@
     <div class="card" style="padding:14px"><b>🧩 Riddle:</b> ${esc(rd[0])}<br><button class="small ghost" id="rbtn" style="margin-top:6px">Reveal answer</button><div id="rans" class="hidden fun" style="font-size:19px;margin-top:6px">${esc(rd[1])}</div></div></aside></div>`;
     APP.innerHTML = h; window.scrollTo(0, 0);
     wire(); syncTiles(false); updateProgress(); setCur(curN);
-    Guard.start(); T.log(resume ? 'module_resume' : 'module_start', { mod: mi + 1, label: label(mi), title: mod.title, done: okCount(mst) });
+    KP.inp = null; KP.open(); Guard.start(); T.log(resume ? 'module_resume' : 'module_start', { mod: mi + 1, label: label(mi), title: mod.title, done: okCount(mst) });
   }
   function syncTiles(animate) {
     const n = mst.done ? 30 : okCount(mst);
@@ -230,7 +230,7 @@
     updateProgress();
   }
   function focusNext(n) {
-    for (let k = n + 1; k < 30; k++) { const q = mod.questions[k], s = mst.q[q.id]; if (!(s && (s.ok || s.rev))) { const el = $('#q' + k); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); const inp = $('input', el); if (inp) inp.focus({ preventScroll: true }); setCur(k); } return; } }
+    for (let k = n + 1; k < 30; k++) { const q = mod.questions[k], s = mst.q[q.id]; if (!(s && (s.ok || s.rev))) { const el = $('#q' + k); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); const inp = $('input', el); if (inp) { KP.inp = inp; } if (inp) inp.focus({ preventScroll: true }); setCur(k); } return; } }
   }
   function showMe(q) {
     const s = qSt(q); if (s.ok || s.rev) return; s.rev = true; const card = $('#q' + q.n);
@@ -305,13 +305,16 @@
       d.addEventListener('pointerdown', e => e.preventDefault()); d.addEventListener('mousedown', e => e.preventDefault());
       d.addEventListener('click', e => { const b = e.target.closest('button'); if (b) KP.press(b.dataset.k); });
       document.body.appendChild(d); KP.el = d;
+      document.addEventListener('pointerdown', e => { const i = e.target.closest && e.target.closest('.ans input'); if (i && !i.readOnly) { KP.inp = i; KP.show(true); } }, true);
       document.addEventListener('focusin', e => { const i = e.target; if (i.matches && i.matches('.ans input') && !i.readOnly) { clearTimeout(KP.t); KP.inp = i; KP.show(); } });
-      document.addEventListener('focusout', () => { clearTimeout(KP.t); KP.t = setTimeout(() => { const a = document.activeElement; if (!(a && a.matches && a.matches('.ans input'))) KP.hide(); }, 250); });
+      
     },
-    show() { KP.el.classList.add('on'); document.body.classList.add('kp-on'); const c = KP.inp.closest('.q'); if (c) setTimeout(() => c.scrollIntoView({ block: 'center', behavior: 'smooth' }), 60); },
+    open() { if (!KP.el || !mod) return; if (!KP.inp || !document.body.contains(KP.inp)) KP.inp = $$('.q .ans input').find(i => !i.readOnly) || null; if (KP.inp) KP.show(); },
+    show() { KP.el.classList.add('on'); document.body.classList.add('kp-on'); const c = KP.inp && KP.inp.closest('.q'); if (c) setTimeout(() => c.scrollIntoView({ block: 'center', behavior: 'smooth' }), 60); },
     hide() { if (!KP.el) return; KP.el.classList.remove('on'); document.body.classList.remove('kp-on'); },
     press(k) {
-      const i = KP.inp; if (!i || i.readOnly) return;
+      let i = KP.inp;
+      if (!i || i.readOnly || !document.body.contains(i)) { const all = $$('.q .ans input'), at = Math.max(0, all.indexOf(i)); i = all.slice(at).find(x => !x.readOnly) || all.find(x => !x.readOnly); if (!i) return; KP.inp = i; const c = i.closest('.q'); if (c) c.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
       if (k === 'check') { const c = i.closest('.q'), b = c && $('.chk', c); if (b && !b.disabled) b.click(); return; }
       i.value = k === '⌫' ? i.value.slice(0, -1) : i.value + k; i.classList.remove('bad'); i.dispatchEvent(new Event('input', { bubbles: true }));
     }
