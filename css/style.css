@@ -129,10 +129,3 @@ button.small{padding:7px 12px;font-size:14px;border-radius:11px}
 .mcell.done{background:#d6f7e6;border-color:#8be0b6}.mcell.part{background:#fff3c9;border-color:#ffd46b}.mcell.flag{box-shadow:inset 0 -4px 0 var(--red)}
 .mcell.sel{outline:3px solid var(--purple)}
 
-.kp{position:fixed;left:0;right:0;bottom:0;z-index:80;display:none;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px 10px calc(10px + env(safe-area-inset-bottom));background:#ece8ff;border-top:3px solid #cfc6ff;box-shadow:0 -6px 20px rgba(0,0,0,.15);max-width:560px;margin:0 auto}
-.kp.on{display:grid}
-.kp button{font:800 26px 'Baloo 2',sans-serif;padding:9px 0;border-radius:14px;border:2px solid #cfc6ff;background:#fff;color:var(--ink);touch-action:manipulation;-webkit-user-select:none;user-select:none}
-.kp button:active{background:#e0daff}
-.kp .w2{grid-column:span 2;font-size:20px}
-.kp .go{background:var(--purple2,#6c5ce7);color:#fff;border-color:transparent}
-body.kp-on .wrap{padding-bottom:330px}

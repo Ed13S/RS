@@ -213,7 +213,7 @@
     if (ok) {
       s.ok = true; s.given = q.type === 'mc' ? q.choices[+val] : val; streak = s.att === 1 ? streak + 1 : 0; ding(true);
       card.classList.add('ok'); $('.qn', card).textContent = '✓';
-      const inp = $('input', card); if (inp) { inp.classList.remove('bad'); inp.classList.add('good'); inp.readOnly = true; $('.chk', card).disabled = true; }
+      const inp = $('input', card); if (inp) { inp.classList.remove('bad'); inp.classList.add('good'); inp.readOnly = true; $('.chk', card).disabled = true; KP.next(); }
       if (q.type === 'mc') $$('[data-mc]', card).forEach(b => { b.disabled = true; if (String(b.dataset.mc) === String(q.answer)) b.classList.add('good'); });
       const fb = $('.fb', card); fb.className = 'fb good'; fb.textContent = PRAISE[(q.n + s.att) % PRAISE.length] + (s.att === 1 ? '  (first try!)' : '');
       $('.extra', card).innerHTML = `<div class="sol">💡 ${q.sol}</div>`; const tools = $('.tools', card); if (tools) tools.remove();
@@ -235,7 +235,7 @@
   function showMe(q) {
     const s = qSt(q); if (s.ok || s.rev) return; s.rev = true; const card = $('#q' + q.n);
     T.log('reveal', { mod: mi + 1, q: q.n + 1, qid: q.id, qText: qtext(q), att: s.att, wrong: s.wrong.slice(-5) });
-    card.classList.add('rev'); $('.qn', card).textContent = '👀'; const inp = $('input', card); if (inp) inp.readOnly = true; $$('button', card).forEach(b => { if (!b.classList.contains('clue') && !b.classList.contains('show')) b.disabled = true; });
+    card.classList.add('rev'); $('.qn', card).textContent = '👀'; const inp = $('input', card); if (inp) inp.readOnly = true; KP.next(); $$('button', card).forEach(b => { if (!b.classList.contains('clue') && !b.classList.contains('show')) b.disabled = true; });
     $('.extra', card).innerHTML = `<div class="sol">💡 ${q.sol}<br><b>Answer: ${esc(M.displayAnswer(q))}</b></div>`; const t = $('.tools', card); if (t) t.remove(); const fb = $('.fb', card); fb.className = 'fb'; fb.textContent = 'No worries – learn it, then try the next one! 🌟';
     streak = 0; updateProgress(); save(); if (resolved(mst) >= 30) setTimeout(finish, 900);
   }
@@ -295,27 +295,32 @@
 
   /* ---------- Guard: focus-mode tracking ---------- */
   const TOUCH = (navigator.maxTouchPoints || 0) > 1 || /iPad|iPhone|Android/i.test(navigator.userAgent);
-  /* ---------- on-screen number pad (touch devices) ---------- */
+  /* ---------- on-screen number pad (touch devices): sits right beside the active answer box ---------- */
   const KP = {
-    el: null, inp: null, t: 0,
+    el: null, inp: null,
     init() {
-      if (!TOUCH || KP.el) return; const d = document.createElement('div'); d.id = 'kp'; d.className = 'kp';
+      if (!TOUCH || KP.el) return;
+      const st = document.createElement('style'); st.textContent = '.kpad{display:grid;grid-template-columns:repeat(4,52px);gap:6px;margin:4px 0}.kpad button{font:800 22px "Baloo 2",system-ui,sans-serif;height:44px;padding:0;border-radius:12px;border:2px solid #cfc6ff;background:#fff;color:#2b2550;touch-action:manipulation;-webkit-user-select:none;user-select:none}.kpad button:active{background:#e0daff}.kpad .w4{grid-column:span 4;font-size:17px}.ans.hasKp{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px}.ans.hasKp .kpwrap{flex:0 0 auto}'; document.head.appendChild(st);
+      const d = document.createElement('div'); d.className = 'kpad';
       const keys = ['7', '8', '9', '⌫', '4', '5', '6', '/', '1', '2', '3', '.', '-', '0', ',', ':'];
-      d.innerHTML = keys.map(k => `<button type="button" data-k="${k}">${k}</button>`).join('') + '<button type="button" data-k=" " class="w2">space</button><button type="button" data-k="check" class="w2 go">Check ✓</button>';
+      d.innerHTML = keys.map(k => `<button type="button" data-k="${k}">${k}</button>`).join('') + '<button type="button" data-k=" " class="w4">space</button>';
       d.addEventListener('pointerdown', e => e.preventDefault()); d.addEventListener('mousedown', e => e.preventDefault());
       d.addEventListener('click', e => { const b = e.target.closest('button'); if (b) KP.press(b.dataset.k); });
-      document.body.appendChild(d); KP.el = d;
-      document.addEventListener('pointerdown', e => { const i = e.target.closest && e.target.closest('.ans input'); if (i && !i.readOnly) { KP.inp = i; KP.show(true); } }, true);
-      document.addEventListener('focusin', e => { const i = e.target; if (i.matches && i.matches('.ans input') && !i.readOnly) { clearTimeout(KP.t); KP.inp = i; KP.show(); } });
-      
+      KP.el = d;
+      document.addEventListener('pointerdown', e => { const i = e.target.closest && e.target.closest('.ans input'); if (i && !i.readOnly) KP.to(i); }, true);
+      document.addEventListener('focusin', e => { const i = e.target; if (i.matches && i.matches('.ans input') && !i.readOnly) KP.to(i); });
     },
-    open() { if (!KP.el || !mod) return; if (!KP.inp || !document.body.contains(KP.inp)) KP.inp = $$('.q .ans input').find(i => !i.readOnly) || null; if (KP.inp) KP.show(); },
-    show() { KP.el.classList.add('on'); document.body.classList.add('kp-on'); const c = KP.inp && KP.inp.closest('.q'); if (c) setTimeout(() => c.scrollIntoView({ block: 'center', behavior: 'smooth' }), 60); },
-    hide() { if (!KP.el) return; KP.el.classList.remove('on'); document.body.classList.remove('kp-on'); },
+    to(i) { // move the pad next to this input
+      if (!KP.el || !i) return; KP.inp = i; const box = i.closest('.ans'); if (!box) return;
+      if (KP.el.parentNode && KP.el.parentNode.parentNode && KP.el.parentNode.parentNode !== box) KP.el.parentNode.parentNode.classList.remove('hasKp');
+      let w = box.querySelector('.kpwrap'); if (!w) { w = document.createElement('div'); w.className = 'kpwrap'; box.appendChild(w); }
+      if (KP.el.parentNode !== w) w.appendChild(KP.el); box.classList.add('hasKp'); KP.el.style.display = 'grid';
+    },
+    next() { const all = $$('.q .ans input'), at = all.indexOf(KP.inp), n = all.slice(Math.max(0, at)).find(x => !x.readOnly) || all.find(x => !x.readOnly); if (n) KP.to(n); else KP.hide(); },
+    open() { if (!KP.el || !mod) return; KP.inp = null; KP.next(); },
+    hide() { if (KP.el) { KP.el.style.display = 'none'; if (KP.el.parentNode) KP.el.parentNode.parentNode && KP.el.parentNode.parentNode.classList.remove('hasKp'); } },
     press(k) {
-      let i = KP.inp;
-      if (!i || i.readOnly || !document.body.contains(i)) { const all = $$('.q .ans input'), at = Math.max(0, all.indexOf(i)); i = all.slice(at).find(x => !x.readOnly) || all.find(x => !x.readOnly); if (!i) return; KP.inp = i; const c = i.closest('.q'); if (c) c.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
-      if (k === 'check') { const c = i.closest('.q'), b = c && $('.chk', c); if (b && !b.disabled) b.click(); return; }
+      let i = KP.inp; if (!i || i.readOnly || !document.body.contains(i)) { KP.next(); i = KP.inp; if (!i || i.readOnly) return; }
       i.value = k === '⌫' ? i.value.slice(0, -1) : i.value + k; i.classList.remove('bad'); i.dispatchEvent(new Event('input', { bubbles: true }));
     }
   };
