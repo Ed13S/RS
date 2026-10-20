@@ -1,7 +1,7 @@
 exec(open('test/ctl.py').read().split("with sync_playwright")[0])
 with sync_playwright() as p:
     b=p.chromium.launch(); ctx=b.new_context(); pg=ctx.new_page()
-    ctx.route('**/*.firebaseio.com/**',fb); ctx.route('https://ntfy.sh/',ntfy); ctx.route('**/js/config.js',lambda r:r.fulfill(body=CFGJS,content_type='application/javascript')); ctx.route('**/fonts.*/**',lambda r:r.abort())
+    ctx.route('**/*.firebaseio.com/**',fb); ctx.route('https://ntfy.sh/',ntfy); ctx.route('**/js/config.js*',lambda r:r.fulfill(body=CFGJS,content_type='application/javascript')); ctx.route('**/fonts.*/**',lambda r:r.abort())
     pg.goto('http://localhost:8765/index.html'); pg.fill('#nm','Amy'); pg.click('#nameForm button'); pg.click('[data-open="0"]'); pg.click('#go'); pg.wait_for_timeout(500)
     pg.evaluate("Object.defineProperty(document,'hidden',{value:true,configurable:true});document.dispatchEvent(new Event('visibilitychange'))"); pg.wait_for_timeout(800)
     print('notes',[n['title'] for n in notes])

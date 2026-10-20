@@ -7,6 +7,8 @@
   const NMOD = C.count, DPW = Math.max(1, CFG.DAYS_PER_WEEK || 1), MAXCLUE = CFG.MAX_CLUES || 3;
   const PRAISE = ['Brilliant! 🌟', 'You got it! 🎉', 'Nailed it! 💪', 'Correct! 🚀', 'Super maths! 🧠', 'Yes! 🙌', 'Spot on! 🎯', 'Wow, nice one! ⭐', 'Smashed it! 💥'];
   const TRY = ['Not quite – have another go! 💪', 'Close! Check your working. 🔎', 'Hmm, not yet. You can do it! 🌈', 'Read the question slowly and try again. 📖', 'Oops! Take a breath and retry. 🌬️'];
+  let adminMode = !!LS.get('mq_admin', false);
+  const SK = () => adminMode ? 'mq_state_admin' : 'mq_state_v2', NK = () => adminMode ? 'mq_name_admin' : 'mq_name';
   let st = { name: '', mods: {} }, mod = null, mi = -1, mst = null, curN = 0, curSince = 0, streak = 0, saveT = 0, muted = LS.get('mq_muted', false);
   const label = i => DPW > 1 ? `Week ${Math.floor(i / DPW) + 1} · Day ${i % DPW + 1}` : `Week ${i + 1}`;
   const stars = s => s >= 27 ? 3 : s >= 21 ? 2 : 1;
@@ -15,7 +17,7 @@
   const okCount = m => m ? Object.values(m.q || {}).filter(x => x.ok).length : 0;
   const resolved = m => m ? Object.values(m.q || {}).filter(x => x.ok || x.rev).length : 0;
   let ctl = {}, ctlSig = '';
-  const unlocked = i => { const a = ctl.access && ctl.access[i]; if (a === 'open') return true; if (a === 'lock') return false; return !!ctl.all || CFG.UNLOCK_ALL || i === 0 || !!(st.mods[i - 1] && st.mods[i - 1].done); };
+  const unlocked = i => { if (adminMode) return true; const a = ctl.access && ctl.access[i]; if (a === 'open') return true; if (a === 'lock') return false; return !!ctl.all || CFG.UNLOCK_ALL || i === 0 || !!(st.mods[i - 1] && st.mods[i - 1].done); };
   const toast = msg => { const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2600); };
   function ding(ok) {
     if (muted) return; try { const ctx = ding.c || (ding.c = new (window.AudioContext || window.webkitAudioContext)()), o = ctx.createOscillator(), g = ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.type = 'sine'; const t0 = ctx.currentTime; (ok ? [660, 880, 1100] : [220]).forEach((f, i) => o.frequency.setValueAtTime(f, t0 + i * .09)); g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(.15, t0 + .02); g.gain.exponentialRampToValueAtTime(.0001, t0 + (ok ? .34 : .2)); o.start(t0); o.stop(t0 + .4); } catch (e) { }
@@ -29,9 +31,9 @@
   function hideOv() { OV.innerHTML = ''; Guard.paused = false; }
 
   /* ---------- persistence ---------- */
-  function load() { const s = LS.get('mq_state_v2', null); if (s && s.mods) st = s; if (!st.name) st.name = LS.get('mq_name', '') || CFG.STUDENT_NAME || ''; }
+  function load() { st = { name: '', mods: {} }; const s = LS.get(SK(), null); if (s && s.mods) st = s; if (!st.name) st.name = adminMode ? 'Admin' : (LS.get(NK(), '') || CFG.STUDENT_NAME || ''); }
   function save(now) {
-    LS.set('mq_state_v2', st); LS.set('mq_name', st.name);
+    LS.set(SK(), st); LS.set(NK(), st.name);
     clearTimeout(saveT); saveT = setTimeout(cloudSave, now ? 0 : 4000);
   }
   function summary() { const d = {}; Object.keys(st.mods).forEach(k => { const x = st.mods[k]; d[k] = { ok: okCount(x), done: !!x.done, score: x.score || 0, ms: x.ms || 0, leaves: x.leaves || 0, away: x.awayMs || 0, clues: Object.values(x.q || {}).reduce((a, b) => a + (b.clues || 0), 0), at: x.finishedAt || 0 }; }); return d; }
@@ -44,6 +46,8 @@
     if (c.type === 'resetMod') delete st.mods[i];
     else if (c.type === 'completeMod') { const m = ms(); C.buildModule(i).questions.forEach(q => mark(m, q)); m.done = true; m.score = okCount(m); m.finishedAt = m.finishedAt || Date.now(); m.adm = 1; }
     else if (c.type === 'completeQ') { const m = ms(), q = C.buildModule(i).questions.find(x => x.id === c.qid); if (q) mark(m, q); }
+    else if (c.type === 'unleave') { const m = st.mods[i]; if (m) { m.leaves = Math.max(0, (m.leaves || 0) - 1); m.awayMs = Math.max(0, (m.awayMs || 0) - (+c.awayMs || 0)); } }
+    else if (c.type === 'clearLeaves') Object.keys(st.mods).forEach(k => { st.mods[k].leaves = 0; st.mods[k].awayMs = 0; });
     else if (c.type === 'resetQ') { const m = st.mods[i]; if (m && m.q) { delete m.q[c.qid]; m.done = false; delete m.finishedAt; } }
   }
   function wipeDevice() {
@@ -54,11 +58,11 @@
   async function syncCtl(quiet) {
     if (!st.name || !T.sid) return;
     const c = await T.loadControl(); if (c === false) return;
-    const before = ctlSig; ctl = c || {}; ctlSig = JSON.stringify([ctl.access, ctl.all]);
+    const before = ctlSig; ctl = c || {}; ctlSig = JSON.stringify([ctl.access, ctl.all, ctl.silent]);
     if (ctl.wipe) { wipeDevice(); return; }
     const applied = LS.get('mq_applied', []); let n = 0, hitCur = false;
     Object.keys(ctl.cmds || {}).sort().forEach(k => {
-      const c2 = ctl.cmds[k]; if (!applied.includes(k)) { applyCmd(c2); applied.push(k); n++; if (mod && +c2.mod === mi) hitCur = true; T.log('admin_cmd', { cmd: c2.type, mod: +c2.mod + 1, qid: c2.qid || '' }); }
+      const c2 = ctl.cmds[k]; if (!applied.includes(k)) { applyCmd(c2); applied.push(k); n++; if (mod && +c2.mod === mi && /^(completeMod|resetMod|completeQ|resetQ)$/.test(c2.type)) hitCur = true; T.log('admin_cmd', { cmd: c2.type, mod: +c2.mod + 1, qid: c2.qid || '' }); }
       T.ackCmd(k);
     });
     if (n) { LS.set('mq_applied', applied.slice(-300)); save(true); }
@@ -85,10 +89,17 @@
     <div class="card gate"><div class="pip">🦉</div><h2>Hi, I'm Professor Pip!</h2><p>We're going on a maths adventure together. Each week there's a mission with <b>30 questions</b>. Every right answer uncovers a piece of a <b>secret picture</b>!</p>
     <form id="nameForm" autocomplete="off"><label for="nm" class="small">What's your first name?</label><br><input id="nm" maxlength="20" placeholder="Type your name" value="${esc(st.name || '')}" required><p><button type="submit" class="fun" style="font-size:22px;padding:12px 26px">Let's go! 🚀</button></p></form></div>`;
     bindSearch();
-    $('#nameForm').addEventListener('submit', e => { e.preventDefault(); const n = $('#nm').value.trim(); if (!n) return; st.name = n; save(true); begin(); });
+    $('#nameForm').addEventListener('submit', e => { e.preventDefault(); const n = $('#nm').value.trim(); if (!n) return; if (n.toLowerCase() === 'admin') { adminLogin(); return; } st.name = n; save(true); begin(); });
   }
+  function adminLogin(msg) {
+    APP.innerHTML = `<div class="top"><div class="brand"><div class="logo">🦉</div><div><h1>MathQuest</h1><p>Admin sign-in</p></div></div></div><div class="card gate"><div style="font-size:54px">🔐</div><h2>Admin passcode</h2><form id="apf" autocomplete="off"><input id="apw" type="password" placeholder="Passcode" autocomplete="current-password"><p><button type="submit" class="fun">Sign in</button> <button type="button" class="ghost" id="apx">Cancel</button></p><div class="small" style="color:#c00">${msg || ''}</div></form></div>`;
+    $('#apx').onclick = () => { st.name = ''; welcome(); };
+    $('#apf').onsubmit = e => { e.preventDefault(); if ($('#apw').value !== (CFG.ADMIN_PASSCODE || '')) { adminLogin('Not quite.'); return; } LS.set('mq_admin', true); try { sessionStorage.setItem('mq_admin_ok', '1'); } catch (x) { } adminMode = true; load(); save(true); begin(); };
+    setTimeout(() => { const i = $('#apw'); if (i) i.focus(); }, 50);
+  }
+  function adminLogout() { adminMode = false; LS.set('mq_admin', false); try { sessionStorage.removeItem('mq_admin_ok'); } catch (e) { } T.disabled = false; ctl = {}; ctlSig = ''; load(); if (st.name) begin(); else welcome(); }
   async function begin() {
-    T.init(st.name);
+    T.disabled = adminMode; T.init(st.name);
     const cloud = await T.loadCloudProgress();
     if (cloud && cloud.mods) { const cs = Object.values(cloud.mods).reduce((a, m) => a + okCount(m), 0), ls = Object.values(st.mods).reduce((a, m) => a + okCount(m), 0); if (cs > ls) { st.mods = cloud.mods; save(true); } }
     T.log('session_start', { ua: navigator.userAgent.slice(0, 140), screen: innerWidth + 'x' + innerHeight, doneModules: Object.values(st.mods).filter(x => x.done).length });
@@ -103,6 +114,7 @@
     <div class="card hero"><div class="pip">🦉</div><div><div class="bubble">${doneN === 0 ? `Welcome, <b>${esc(st.name)}</b>! Pick your first mission and let's uncover a secret picture!` : doneN >= NMOD ? '🏆 You finished EVERY mission! You are a maths legend!' : `Great work, <b>${esc(st.name)}</b>! You've found <b>${doneN}</b> of ${NMOD} secret pictures.`}</div>
     <div class="stats" style="margin-top:10px"><span class="chip">⭐ ${starsT} stars</span><span class="chip">🖼️ ${doneN}/${NMOD} pictures</span>${next >= 0 && unlocked(next) ? `<button class="fun" data-open="${next}">▶ ${st.mods[next] && resolved(st.mods[next]) ? 'Continue' : 'Start'} ${label(next)}</button>` : ''}</div>
     <div class="joke" style="margin-top:12px"><div class="q" style="all:unset"><b>😄 Joke of the day:</b> ${esc(j[0])}</div><button class="small ghost" id="jbtn">Show the punchline</button><div id="jans" class="hidden fun" style="font-size:20px;margin-top:6px">${esc(j[1])}</div></div></div></div>
+    ${adminMode ? '<div class="card" style="background:#fff9e6;border-color:#ffe29a"><b>👑 Admin mode</b> – everything is unlocked and nothing you do here is tracked or alerted. <button class="small" id="adash">Open dashboard</button> <button class="small ghost" id="alogout">Log out of admin</button></div>' : ''}
     <div class="grid">`;
     for (let i = 0; i < NMOD; i++) {
       const m = st.mods[i], ul = unlocked(i), isDone = m && m.done, ok = okCount(m), P = C.PLAN[i], em = P[1].map(k => C.TOPICS[k][1]).join(' ');
@@ -116,7 +128,8 @@
     bindSearch(); window.scrollTo(0, 0);
     $('#jbtn').onclick = () => { $('#jans').classList.remove('hidden'); $('#jbtn').remove(); };
     $$('[data-open]').forEach(b => b.onclick = () => { const i = +b.dataset.open; if (unlocked(i)) openModule(i); });
-    $('#switch').onclick = () => { st = { name: '', mods: {} }; LS.set('mq_state_v2', st); LS.set('mq_name', ''); T.queue = []; welcome(); };
+    $('#switch').onclick = () => { if (adminMode) { adminLogout(); return; } st = { name: '', mods: {} }; LS.set('mq_state_v2', st); LS.set('mq_name', ''); T.queue = []; welcome(); };
+    const ao = $('#adash'); if (ao) ao.onclick = () => { location.href = 'admin.html'; }; const al = $('#alogout'); if (al) al.onclick = adminLogout;
   }
 
   /* ---------- module gate ---------- */
@@ -143,7 +156,7 @@
       const im = (q.type === 'num' && parseFloat(q.answer) >= 0) ? 'decimal' : 'text';
       input = `<div class="ans">${q.pre ? `<span class="pre">${q.pre}</span>` : ''}<input type="text" inputmode="${TOUCH ? 'none' : im}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${ph}" aria-label="Answer for question ${q.n + 1}" value="${s.ok ? esc(s.given || '') : ''}" class="${s.ok ? 'good' : ''}" ${s.ok || s.rev ? 'readonly' : ''}>${q.unit ? `<span class="unit">${esc(q.unit)}</span>` : ''}<button type="button" class="chk" ${s.ok || s.rev ? 'disabled' : ''}>Check ✓</button></div>`;
     }
-    return `<div class="q ${s.ok ? 'ok' : s.rev ? 'rev' : ''}" id="q${q.n}" data-n="${q.n}"><div class="qh"><div class="qn">${s.ok ? '✓' : q.n + 1}</div><div class="qp">${q.prompt}</div></div>${q.svg || ''}${input}<div class="fb ${s.ok ? 'good' : ''}">${s.ok ? PRAISE[q.n % PRAISE.length] : ''}</div><div class="extra">${s.ok || s.rev ? `<div class="sol">💡 ${q.sol}${s.rev ? '<br><b>Answer: ' + esc(M.displayAnswer(q)) + '</b>' : ''}</div>` : ''}</div>${s.ok || s.rev ? '' : `<div class="tools"><button type="button" class="ghost small clue">🦉 Ask Professor Pip for a clue <span class="cl">${(s.clues || 0)}/${MAXCLUE}</span></button><button type="button" class="warn small show hidden">👀 Show me how</button></div>`}</div>`;
+    return `<div class="q ${s.ok ? 'ok' : s.rev ? 'rev' : ''}" id="q${q.n}" data-n="${q.n}"><div class="qh"><div class="qn">${s.ok ? '✓' : q.n + 1}</div><div class="qp">${q.prompt}</div></div>${q.svg || ''}${input}<div class="fb ${s.ok ? 'good' : ''}">${s.ok ? PRAISE[q.n % PRAISE.length] : ''}</div><div class="extra">${s.ok || s.rev ? `<div class="sol">💡 ${q.sol}${s.rev ? '<br><b>Answer: ' + esc(M.displayAnswer(q)) + '</b>' : ''}</div>` : ''}</div><div class="wkrow"><button type="button" class="ghost small work">✏️ Working out${s.wk ? ' ✓' : ''}</button></div>${s.ok || s.rev ? '' : `<div class="tools"><button type="button" class="ghost small clue">🦉 Ask Professor Pip for a clue <span class="cl">${(s.clues || 0)}/${MAXCLUE}</span></button><button type="button" class="warn small show hidden">👀 Show me how</button></div>`}</div>`;
   }
   function renderModule(resume) {
     curN = 0; for (const q of mod.questions) { const s = mst.q[q.id]; if (!(s && (s.ok || s.rev))) { curN = q.n; break; } }
@@ -194,6 +207,7 @@
       const q = qOf(e.target); if (!q) return;
       if (e.target.closest('.chk')) { const inp = $('input', e.target.closest('.q')); submit(q, inp.value, false); }
       else if (e.target.closest('[data-mc]')) submit(q, e.target.closest('[data-mc]').dataset.mc, false, e.target.closest('[data-mc]'));
+      else if (e.target.closest('.work')) openPad(q, e.target.closest('.work'));
       else if (e.target.closest('.clue')) askClue(q);
       else if (e.target.closest('.show')) showMe(q);
     });
@@ -240,10 +254,43 @@
     streak = 0; updateProgress(); save(); if (resolved(mst) >= 30) setTimeout(finish, 900);
   }
 
+
+  /* ---------- handwritten working out ---------- */
+  const WORK = {};
+  function openPad(q, btn) {
+    const key = 'mq_work_' + T.sid + '_' + q.id, prev = WORK[q.id] || LS.get(key, null);
+    if (!document.getElementById('padcss')) { const c = document.createElement('style'); c.id = 'padcss'; c.textContent = '.padm{max-width:860px;width:96vw;text-align:left}.padm canvas{width:100%;aspect-ratio:2/1;border:3px solid #cfc6ff;border-radius:14px;background:#fff;touch-action:none;display:block;cursor:crosshair}.padt{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}.padt button{padding:8px 14px}.sw{width:34px!important;height:34px;border-radius:50%!important;padding:0!important;border:3px solid #fff!important;box-shadow:0 0 0 2px #cfc6ff}.sw.on{box-shadow:0 0 0 4px #6c5ce7}.wkrow{margin-top:8px}'; document.head.appendChild(c); }
+    OV.innerHTML = `<div class="ov"><div class="modal padm"><div class="small" style="margin-bottom:8px"><b>Question ${q.n + 1}</b> · ${q.prompt}</div><canvas id="padcv" width="1500" height="750"></canvas>
+      <div class="padt"><button type="button" class="sw on" data-c="#222" style="background:#222" aria-label="black"></button><button type="button" class="sw" data-c="#1f6feb" style="background:#1f6feb" aria-label="blue"></button><button type="button" class="sw" data-c="#d63031" style="background:#d63031" aria-label="red"></button><button type="button" class="ghost" id="pe">🧽 Rubber</button><button type="button" class="ghost" id="pu">↩ Undo</button><button type="button" class="ghost" id="pc">🗑 Clear</button><span style="flex:1"></span><button type="button" class="ghost" id="px">Close</button><button type="button" class="fun" id="ps">Save my working ✓</button></div></div></div>`;
+    const cv = document.getElementById('padcv'), ctx = cv.getContext('2d'); let color = '#222', erase = false, strokes = [], cur = null, base = null;
+    const redraw = () => { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height); ctx.strokeStyle = '#eef0ff'; ctx.lineWidth = 2; for (let y = 60; y < cv.height; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cv.width, y); ctx.stroke(); } if (base) ctx.drawImage(base, 0, 0, cv.width, cv.height); strokes.forEach(drawS); };
+    const drawS = s => { ctx.strokeStyle = s.c; ctx.lineWidth = s.w; ctx.lineCap = ctx.lineJoin = 'round'; ctx.beginPath(); s.p.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); if (s.p.length === 1) ctx.lineTo(s.p[0][0] + .1, s.p[0][1]); ctx.stroke(); };
+    const pos = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * cv.width / r.width, (e.clientY - r.top) * cv.height / r.height]; };
+    if (prev) { base = new Image(); base.onload = redraw; base.src = prev; } redraw();
+    cv.addEventListener('pointerdown', e => { e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (x) { } cur = { c: erase ? '#fff' : color, w: erase ? 36 : 5, p: [pos(e)] }; strokes.push(cur); drawS(cur); });
+    cv.addEventListener('pointermove', e => { if (!cur) return; e.preventDefault(); cur.p.push(pos(e)); const n = cur.p.length; ctx.strokeStyle = cur.c; ctx.lineWidth = cur.w; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(cur.p[n - 2][0], cur.p[n - 2][1]); ctx.lineTo(cur.p[n - 1][0], cur.p[n - 1][1]); ctx.stroke(); });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => cv.addEventListener(t, () => { cur = null; }));
+    $$('.sw', OV).forEach(b => b.onclick = () => { color = b.dataset.c; erase = false; $$('.sw', OV).forEach(x => x.classList.toggle('on', x === b)); $('#pe').classList.add('ghost'); });
+    $('#pe').onclick = () => { erase = !erase; $('#pe').classList.toggle('ghost', !erase); };
+    $('#pu').onclick = () => { strokes.pop(); redraw(); };
+    $('#pc').onclick = () => { strokes = []; base = null; redraw(); };
+    $('#px').onclick = () => { OV.innerHTML = ''; };
+    $('#ps').onclick = async () => {
+      if (!strokes.length && !prev) { OV.innerHTML = ''; return; }
+      const o = document.createElement('canvas'); o.width = 1000; o.height = 500; o.getContext('2d').drawImage(cv, 0, 0, 1000, 500); const url = o.toDataURL('image/jpeg', .6);
+      WORK[q.id] = url; LS.set(key, url); const s = qSt(q); s.wk = 1; save(); if (btn) btn.textContent = '✏️ Working out ✓';
+      T.log('work', { mod: mi + 1, q: q.n + 1, qid: q.id, qText: qtext(q) }); OV.innerHTML = ''; const ok = await T.saveWork(q.id, { t: Date.now(), mod: mi + 1, q: q.n + 1, img: url }); toast(ok || !CFG.FIREBASE_DB_URL || T.disabled ? 'Working saved ✏️' : 'Saved on this device (could not send yet)');
+    };
+  }
+
   /* ---------- clues from Professor Pip ---------- */
   function fallbackClue(q, n) {
-    const generic = ['Read the question again slowly. What exactly is it asking you to find? ✏️', q.hint, q.hint + ' Try writing each step on paper. 📝'];
-    return generic[Math.min(n, 3) - 1];
+    const hint = String(q.hint || 'Break it into small steps and do one at a time.');
+    if (n <= 1) return hint + ' 🦉';
+    if (n === 2) return hint + ' Write each step on paper (or tap ✏️ Working out) and do one step at a time. 📝';
+    const first = String(M.strip(q.sol || '')).split(/[;,]|\bthen\b/i)[0].trim();
+    if (first && first.length < 60 && !leaks(first, q) && !/\?/.test(first)) return 'Here is how I would start: ' + first + '. What comes next? 🌟';
+    return hint + ' Check each step carefully – you are close! 🌟';
   }
   function leaks(text, q) {
     const a = q.type === 'mc' ? String(q.choices[+q.answer]) : String(q.answer);
@@ -253,9 +300,9 @@
   }
   async function getClue(q, n, s) {
     if (!CFG.CLUE_API_KEY && !CFG.CLUE_PROXY_URL) return { text: fallbackClue(q, n), ai: false };
-    const sys = `You are Professor Pip, a kind, playful owl who helps a child (about 10 years old, in Australia) with maths. Write ONE short clue: at most 2 short sentences, simple words, at most one emoji. NEVER state the final answer, NEVER do the final calculation for the child, and never write a number equal to the answer. This is clue ${n} of ${MAXCLUE}: clue 1 = point to the key idea or what to notice; clue 2 = name the first step without doing it; clue 3 = be more direct, using a guiding question or a similar but easier example with DIFFERENT numbers. If the child's wrong tries show a common mistake, gently steer away from it. Be warm and encouraging.`;
+    const sys = `You are Professor Pip, a kind, playful owl who helps a child (about 10 years old, in Australia) with maths. Write ONE short, SPECIFIC clue about THIS question: at most 2 short sentences, simple words, at most one emoji. Mention what the question is actually about (the objects or numbers' roles) and name the operation or idea to use. Never just say 'read the question carefully' or give vague advice. NEVER state the final answer, NEVER do the final calculation for the child, and never write a number equal to the answer. This is clue ${n} of ${MAXCLUE}: clue 1 = point to the key idea and what is being asked, e.g. 'This is a sharing problem, so think about dividing the stickers first'; clue 2 = name the first step to do and which numbers it uses, without doing the sum; clue 3 = do a similar but easier worked example with DIFFERENT numbers, then ask her to do the same steps with hers, or show the first step's result only if it is not the final answer. If the child's wrong tries show a common mistake, gently steer away from it. Be warm and encouraging.`;
     const user = `Question (diagram described in words if any): ${q.desc}\n\nFOR YOUR EYES ONLY (never reveal): correct answer = ${M.displayAnswer(q)}; method = ${M.strip(q.sol)}\n\nThe child's wrong tries so far: ${s.wrong.length ? s.wrong.slice(-4).join(', ') : 'none yet'}.\n\nWrite clue ${n} now.`;
-    const body = JSON.stringify({ model: CFG.CLUE_MODEL || 'claude-haiku-5-5', max_tokens: 160, system: sys, messages: [{ role: 'user', content: user }] });
+    const body = JSON.stringify({ model: CFG.CLUE_MODEL || 'claude-haiku-5-5', max_tokens: 220, system: sys, messages: [{ role: 'user', content: user }] });
     try {
       const r = CFG.CLUE_PROXY_URL ? await fetch(CFG.CLUE_PROXY_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body })
         : await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': CFG.CLUE_API_KEY, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' }, body });
@@ -281,7 +328,7 @@
     syncTiles(); Guard.stop(); save(true);
     const clues = Object.values(mst.q).reduce((a, b) => a + (b.clues || 0), 0), wrong = Object.values(mst.q).reduce((a, b) => a + ((b.wrong || []).length), 0), rev = Object.values(mst.q).filter(x => x.rev).length;
     T.log('module_complete', { mod: mi + 1, label: label(mi), title: mod.title, score: mst.score, durationMs: mst.ms, leaves: mst.leaves || 0, awayMs: mst.awayMs || 0, clues, wrong, revealed: rev });
-    T.notify(`${st.name} finished ${label(mi)}`, `${mst.score}/30 correct · ${mins(mst.ms)} · left the page ${mst.leaves || 0}× (${Math.round((mst.awayMs || 0) / 1000)}s away) · ${clues} clues · ${wrong} wrong tries${rev ? ' · ' + rev + ' shown' : ''}`, mst.leaves ? ['warning', 'books'] : ['tada'], mst.leaves ? 4 : 3);
+    if (!quiet()) T.notify(`${st.name} finished ${label(mi)}`, `${mst.score}/30 correct · ${mins(mst.ms)} · left the page ${mst.leaves || 0}× (${Math.round((mst.awayMs || 0) / 1000)}s away) · ${clues} clues · ${wrong} wrong tries${rev ? ' · ' + rev + ' shown' : ''}`, mst.leaves ? ['warning', 'books'] : ['tada'], mst.leaves ? 4 : 3);
     cloudSave(); confetti(); ding(true); setTimeout(() => showDone(false), 700);
   }
   function showDone(review) {
@@ -326,6 +373,7 @@
   };
   KP.init();
 
+  const quiet = () => adminMode || !!ctl.silent;
   const Guard = {
     active: false, away: null, paused: false, fsWanted: false, last: {}, lastAct: Date.now(), idle: false, blurT: 0, tick: 0, dev: 0,
     start() {
@@ -345,12 +393,12 @@
       Guard.fsWanted = false; if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => { }); Guard.away = null;
     },
     ctx() { const q = mod && mod.questions[curN]; return { mod: mi + 1, q: curN + 1, qText: q ? qtext(q) : '' }; },
-    goFullscreen(manual) { if (TOUCH) { if (manual) toast('Full screen is not needed on this device.'); return; } const el = document.documentElement; if (el.requestFullscreen) { Guard.fsWanted = true; el.requestFullscreen().catch(() => { Guard.fsWanted = false; if (manual) toast('Full screen is not available here.'); }); } },
-    fsChange() { if (!TOUCH && !document.fullscreenElement && Guard.fsWanted && Guard.active && !(mst && mst.done)) { T.log('fullscreen-exit', Guard.ctx()); showOv(`<div style="font-size:48px">🖥️</div><h2>Back to full screen!</h2><p>Mission mode works best in full screen. Your teacher has been told.</p><button id="fsback" class="fun">Back to my mission 🚀</button>`); $('#fsback').onclick = () => { hideOv(); Guard.goFullscreen(); }; } },
+    goFullscreen(manual) { if (quiet() && !manual) return; if (TOUCH) { if (manual) toast('Full screen is not needed on this device.'); return; } const el = document.documentElement; if (el.requestFullscreen) { Guard.fsWanted = true; el.requestFullscreen().catch(() => { Guard.fsWanted = false; if (manual) toast('Full screen is not available here.'); }); } },
+    fsChange() { if (quiet()) return; if (!TOUCH && !document.fullscreenElement && Guard.fsWanted && Guard.active && !(mst && mst.done)) { T.log('fullscreen-exit', Guard.ctx()); showOv(`<div style="font-size:48px">🖥️</div><h2>Back to full screen!</h2><p>Mission mode works best in full screen. Your teacher has been told.</p><button id="fsback" class="fun">Back to my mission 🚀</button>`); $('#fsback').onclick = () => { hideOv(); Guard.goFullscreen(); }; } },
     vis() { if (document.hidden) Guard.leave('tab-hidden', Date.now()); else Guard.back(); },
     blur() { if (TOUCH) return; clearTimeout(Guard.blurT); const t0 = Date.now(); Guard.blurT = setTimeout(() => { if (!document.hasFocus()) Guard.leave('window-blur', t0); }, 1200); },
     leave(reason, t0) {
-      if (!Guard.active || Guard.away || (mst && mst.done)) return; if (setCurSafe()) { }
+      if (quiet() || !Guard.active || Guard.away || (mst && mst.done)) return; if (setCurSafe()) { }
       Guard.away = { t: t0, reason, q: curN }; mst.leaves = (mst.leaves || 0) + 1;
       T.log('leave', Object.assign(Guard.ctx(), { reason })); T.flush(true);
       if (CFG.NOTIFY_ON_LEAVE !== false) T.notify(`${st.name} left the page`, `${label(mi)}, question ${curN + 1} (${reason})`, ['eyes'], 3); save(true);
@@ -361,22 +409,22 @@
       showOv(`<div style="font-size:54px">👀</div><h2>Welcome back!</h2><p>You were away from the mission for <b>${Math.max(1, Math.round(dur / 1000))} seconds</b>. Your teacher can see this.</p><p class="small">Stay on this page so you can finish and uncover the picture!</p><button id="bk" class="fun">Back to question ${a.q + 1} 🚀</button>`);
       $('#bk').onclick = () => { hideOv(); if (Guard.fsWanted && !document.fullscreenElement) Guard.goFullscreen(); const el = $('#q' + a.q); if (el) { el.scrollIntoView({ block: 'center' }); const i = $('input', el); if (i) i.focus({ preventScroll: true }); } };
     },
-    block(e) { e.preventDefault(); const k = e.type; const now = Date.now(); if (now - (Guard.last[k] || 0) > 3000) { Guard.last[k] = now; T.log('blocked', Object.assign(Guard.ctx(), { kind: k })); } },
+    block(e) { if (quiet()) return; e.preventDefault(); const k = e.type; const now = Date.now(); if (now - (Guard.last[k] || 0) > 3000) { Guard.last[k] = now; T.log('blocked', Object.assign(Guard.ctx(), { kind: k })); } },
     key(e) {
-      const k = e.key.toLowerCase(), ctrl = e.ctrlKey || e.metaKey; let bad = null;
+      if (quiet()) return; const k = e.key.toLowerCase(), ctrl = e.ctrlKey || e.metaKey; let bad = null;
       if (e.key === 'F12') bad = 'F12'; else if (ctrl && e.shiftKey && 'ijc'.includes(k)) bad = 'devtools-shortcut'; else if (ctrl && 'usp'.includes(k) && !e.shiftKey) bad = 'ctrl-' + k;
       if (bad) { e.preventDefault(); e.stopPropagation(); const now = Date.now(); if (now - (Guard.last[bad] || 0) > 3000) { Guard.last[bad] = now; T.log('blocked', Object.assign(Guard.ctx(), { kind: 'key:' + bad })); } }
     },
-    print() { T.log('blocked', Object.assign(Guard.ctx(), { kind: 'print' })); },
-    close() { if (Guard.active && mst && !mst.done) { T.log('page-closed', Guard.ctx()); T.flush(true); if (CFG.NOTIFY_ON_LEAVE !== false && !Guard.away) T.notify(`${st.name} closed the page`, `${label(mi)}, question ${curN + 1}`, ['x'], 4); save(true); } },
+    print() { if (quiet()) return; T.log('blocked', Object.assign(Guard.ctx(), { kind: 'print' })); },
+    close() { if (!quiet() && Guard.active && mst && !mst.done) { T.log('page-closed', Guard.ctx()); T.flush(true); if (CFG.NOTIFY_ON_LEAVE !== false && !Guard.away) T.notify(`${st.name} closed the page`, `${label(mi)}, question ${curN + 1}`, ['x'], 4); save(true); } },
     act() { const now = Date.now(); if (Guard.idle) { T.log('idle-end', Object.assign(Guard.ctx(), { idleMs: now - Guard.lastAct })); Guard.idle = false; curSince = now; } Guard.lastAct = now; },
     timer() {
       if (!Guard.active || !mst) return; const now = Date.now();
       if (!Guard.away && !Guard.paused && document.visibilityState === 'visible') {
-        if (now - Guard.lastAct > 150000 && !Guard.idle) { Guard.idle = true; T.log('idle', Guard.ctx()); }
+        if (!quiet() && now - Guard.lastAct > 150000 && !Guard.idle) { Guard.idle = true; T.log('idle', Guard.ctx()); }
         if (!Guard.idle) { mst.ms = (mst.ms || 0) + 1000; const t = $('#timer'); if (t) t.textContent = '⏱ ' + mm(mst.ms); if (mst.ms % 15000 === 0) save(); }
       }
-      if (!TOUCH && now - Guard.dev > 120000 && !document.fullscreenElement && (window.outerWidth - window.innerWidth > 220 || window.outerHeight - window.innerHeight > 300)) { Guard.dev = now; T.log('devtools-suspected', Guard.ctx()); }
+      if (!quiet() && !TOUCH && now - Guard.dev > 120000 && !document.fullscreenElement && (window.outerWidth - window.innerWidth > 220 || window.outerHeight - window.innerHeight > 300)) { Guard.dev = now; T.log('devtools-suspected', Guard.ctx()); }
     }
   };
   function setCurSafe() { return false; }

@@ -1,0 +1,15 @@
+exec(open('test/ctl.py').read().split("with sync_playwright")[0])
+CFGJS="window.MQ_CONFIG={ADMIN_PASSCODE:'sekret',FIREBASE_DB_URL:'https://t.firebaseio.com',NTFY_TOPIC:'tt',MAX_CLUES:3};"
+with sync_playwright() as p:
+    b=p.chromium.launch(); ctx=b.new_context(); pg=ctx.new_page(); errs=[]; pg.on('pageerror',lambda e:errs.append(str(e)))
+    ctx.route('**/*.firebaseio.com/**',fb); ctx.route('https://ntfy.sh/',ntfy); ctx.route('**/js/config.js*',lambda r:r.fulfill(body=CFGJS,content_type='application/javascript')); ctx.route('**/fonts.*/**',lambda r:r.abort())
+    pg.goto('http://localhost:8765/index.html'); pg.fill('#nm','Amy'); pg.click('#nameForm button'); pg.wait_for_selector('[data-open="0"]'); print('amy locked mods:',pg.locator('[data-open][disabled]').count())
+    pg.click('#switch'); pg.wait_for_selector('#nameForm'); pg.fill('#nm','admin'); pg.click('#nameForm button'); pg.wait_for_selector('#apw')
+    pg.fill('#apw','wrong'); pg.press('#apw','Enter'); pg.wait_for_selector('text=Not quite'); pg.fill('#apw','sekret'); pg.press('#apw','Enter'); pg.wait_for_selector('#adash')
+    print('admin: locked',pg.locator('[data-open][disabled]').count(),'banner yes')
+    pg.click('[data-open="5"]'); pg.click('#go'); pg.wait_for_selector('.q input')
+    pg.evaluate("Object.defineProperty(document,'hidden',{value:true,configurable:true});document.dispatchEvent(new Event('visibilitychange'))"); pg.wait_for_timeout(800)
+    print('admin events in DB:',[k for k in DB.get('mathquest',{}).keys()],'notes',len(notes),'overlay',pg.locator('.ov').count())
+    ad=ctx.new_page(); ad.goto('http://localhost:8765/admin.html'); ad.wait_for_selector('.card'); print('admin page w/o login:',ad.locator('#pw').count()==0)
+    print('sids in DB:',[list(DB['mathquest'][k].keys()) for k in ('events','progress','students')]); pg.goto('http://localhost:8765/index.html'); pg.wait_for_selector('#alogout'); pg.click('#alogout'); pg.wait_for_selector('#nameForm'); print('logout -> welcome ok')
+    print('errs',errs); b.close()

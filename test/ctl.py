@@ -30,7 +30,7 @@ CFGJS="window.MQ_CONFIG={ADMIN_PASSCODE:'x',FIREBASE_DB_URL:'https://t.firebasei
 with sync_playwright() as p:
     b=p.chromium.launch(); ctx=b.new_context(); pg=ctx.new_page()
     for c in(ctx,):
-        c.route('**/*.firebaseio.com/**',fb); c.route('https://ntfy.sh/',ntfy); c.route('**/js/config.js',lambda r:r.fulfill(body=CFGJS,content_type='application/javascript'))
+        c.route('**/*.firebaseio.com/**',fb); c.route('https://ntfy.sh/',ntfy); c.route('**/js/config.js*',lambda r:r.fulfill(body=CFGJS,content_type='application/javascript'))
         c.route('**/fonts.*/**',lambda r:r.abort())
     errs=[]; pg.on('pageerror',lambda e:errs.append(str(e)))
     pg.goto('http://localhost:8765/index.html'); pg.fill('#nm','Amy'); pg.click('#nameForm button'); pg.wait_for_selector('[data-open="0"]')

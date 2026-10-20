@@ -18,3 +18,7 @@ Logged: tab switches, window blur, fullscreen exit, idle, copy/paste/right-click
 
 ## Tests
 `node test/course-test.js` checks all 900 questions.
+
+## Admin account & controls
+- Type `admin` in the name box on the student page, enter the passcode from `js/config.js`: you get an admin account on that device (everything unlocked, nothing tracked or alerted). The dashboard opens without asking again. "Log out of admin" is on the home screen.
+- Dashboard: lock/open modules, mark modules/questions complete, reset them, view her handwritten working, delete individual leave records, delete students, and per-student "admin account" / "silent mode" toggles.
