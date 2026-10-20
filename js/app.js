@@ -141,7 +141,7 @@
     else {
       const ph = q.type === 'frac' ? 'e.g. 3/4 or 1 2/5' : q.type === 'coord' ? 'e.g. 3,4' : q.nospace ? 'e.g. 2:3' : 'type your answer';
       const im = (q.type === 'num' && parseFloat(q.answer) >= 0) ? 'decimal' : 'text';
-      input = `<div class="ans">${q.pre ? `<span class="pre">${q.pre}</span>` : ''}<input type="text" inputmode="${im}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${ph}" aria-label="Answer for question ${q.n + 1}" value="${s.ok ? esc(s.given || '') : ''}" class="${s.ok ? 'good' : ''}" ${s.ok || s.rev ? 'readonly' : ''}>${q.unit ? `<span class="unit">${esc(q.unit)}</span>` : ''}<button type="button" class="chk" ${s.ok || s.rev ? 'disabled' : ''}>Check ✓</button></div>`;
+      input = `<div class="ans">${q.pre ? `<span class="pre">${q.pre}</span>` : ''}<input type="text" inputmode="${TOUCH ? 'none' : im}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${ph}" aria-label="Answer for question ${q.n + 1}" value="${s.ok ? esc(s.given || '') : ''}" class="${s.ok ? 'good' : ''}" ${s.ok || s.rev ? 'readonly' : ''}>${q.unit ? `<span class="unit">${esc(q.unit)}</span>` : ''}<button type="button" class="chk" ${s.ok || s.rev ? 'disabled' : ''}>Check ✓</button></div>`;
     }
     return `<div class="q ${s.ok ? 'ok' : s.rev ? 'rev' : ''}" id="q${q.n}" data-n="${q.n}"><div class="qh"><div class="qn">${s.ok ? '✓' : q.n + 1}</div><div class="qp">${q.prompt}</div></div>${q.svg || ''}${input}<div class="fb ${s.ok ? 'good' : ''}">${s.ok ? PRAISE[q.n % PRAISE.length] : ''}</div><div class="extra">${s.ok || s.rev ? `<div class="sol">💡 ${q.sol}${s.rev ? '<br><b>Answer: ' + esc(M.displayAnswer(q)) + '</b>' : ''}</div>` : ''}</div>${s.ok || s.rev ? '' : `<div class="tools"><button type="button" class="ghost small clue">🦉 Ask Professor Pip for a clue <span class="cl">${(s.clues || 0)}/${MAXCLUE}</span></button><button type="button" class="warn small show hidden">👀 Show me how</button></div>`}</div>`;
   }
@@ -295,6 +295,29 @@
 
   /* ---------- Guard: focus-mode tracking ---------- */
   const TOUCH = (navigator.maxTouchPoints || 0) > 1 || /iPad|iPhone|Android/i.test(navigator.userAgent);
+  /* ---------- on-screen number pad (touch devices) ---------- */
+  const KP = {
+    el: null, inp: null, t: 0,
+    init() {
+      if (!TOUCH || KP.el) return; const d = document.createElement('div'); d.id = 'kp'; d.className = 'kp';
+      const keys = ['7', '8', '9', '⌫', '4', '5', '6', '/', '1', '2', '3', '.', '-', '0', ',', ':'];
+      d.innerHTML = keys.map(k => `<button type="button" data-k="${k}">${k}</button>`).join('') + '<button type="button" data-k=" " class="w2">space</button><button type="button" data-k="check" class="w2 go">Check ✓</button>';
+      d.addEventListener('pointerdown', e => e.preventDefault()); d.addEventListener('mousedown', e => e.preventDefault());
+      d.addEventListener('click', e => { const b = e.target.closest('button'); if (b) KP.press(b.dataset.k); });
+      document.body.appendChild(d); KP.el = d;
+      document.addEventListener('focusin', e => { const i = e.target; if (i.matches && i.matches('.ans input') && !i.readOnly) { clearTimeout(KP.t); KP.inp = i; KP.show(); } });
+      document.addEventListener('focusout', () => { clearTimeout(KP.t); KP.t = setTimeout(() => { const a = document.activeElement; if (!(a && a.matches && a.matches('.ans input'))) KP.hide(); }, 250); });
+    },
+    show() { KP.el.classList.add('on'); document.body.classList.add('kp-on'); const c = KP.inp.closest('.q'); if (c) setTimeout(() => c.scrollIntoView({ block: 'center', behavior: 'smooth' }), 60); },
+    hide() { if (!KP.el) return; KP.el.classList.remove('on'); document.body.classList.remove('kp-on'); },
+    press(k) {
+      const i = KP.inp; if (!i || i.readOnly) return;
+      if (k === 'check') { const c = i.closest('.q'), b = c && $('.chk', c); if (b && !b.disabled) b.click(); return; }
+      i.value = k === '⌫' ? i.value.slice(0, -1) : i.value + k; i.classList.remove('bad'); i.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  };
+  KP.init();
+
   const Guard = {
     active: false, away: null, paused: false, fsWanted: false, last: {}, lastAct: Date.now(), idle: false, blurT: 0, tick: 0, dev: 0,
     start() {
@@ -307,7 +330,7 @@
       Guard.tick = setInterval(Guard.timer, 1000);
     },
     stop() {
-      if (!Guard.active) return; Guard.active = false; clearInterval(Guard.tick); clearTimeout(Guard.blurT);
+      KP.hide(); if (!Guard.active) return; Guard.active = false; clearInterval(Guard.tick); clearTimeout(Guard.blurT);
       document.removeEventListener('visibilitychange', Guard.vis); window.removeEventListener('blur', Guard.blur); window.removeEventListener('focus', Guard.back); document.removeEventListener('fullscreenchange', Guard.fsChange);
       ['copy', 'cut', 'paste', 'contextmenu', 'dragstart'].forEach(e => document.removeEventListener(e, Guard.block)); document.removeEventListener('keydown', Guard.key, true); window.removeEventListener('beforeprint', Guard.print);
       ['pointerdown', 'keydown', 'pointermove', 'scroll', 'touchstart'].forEach(ev => document.removeEventListener(ev, Guard.act)); window.removeEventListener('pagehide', Guard.close); window.removeEventListener('beforeunload', Guard.close);
