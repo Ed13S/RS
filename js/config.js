@@ -17,7 +17,7 @@ window.MQ_CONFIG = {
 
   // ---- Phone alerts when she finishes a module (free, no account) ----
   // Install the free "ntfy" app, subscribe to this topic name. Make it long and random.
-  NTFY_TOPIC: "",
+  NTFY_TOPIC: "mathquest",
   NOTIFY_ON_LEAVE: false,          // also ping you every time she leaves the page
 
   // ---- AI clues ("Professor Pip") ----
