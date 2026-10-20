@@ -23,7 +23,7 @@ window.MQ_CONFIG = {
   // ---- AI clues ("Professor Pip") ----
   // Anthropic API key. WARNING: anything in this file is public once it is on GitHub Pages.
   // Use a key with a small spend limit, or use CLUE_PROXY_URL instead (see README).
-  CLUE_API_KEY: "",
+  CLUE_API_KEY: "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",
   CLUE_MODEL: "claude-haiku-5-5",
   CLUE_PROXY_URL: "",              // optional: your own endpoint that holds the key
   MAX_CLUES: 3,                    // clues allowed per question
