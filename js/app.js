@@ -314,8 +314,8 @@
       Guard.fsWanted = false; if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => { }); Guard.away = null;
     },
     ctx() { const q = mod && mod.questions[curN]; return { mod: mi + 1, q: curN + 1, qText: q ? qtext(q) : '' }; },
-    goFullscreen(manual) { const el = document.documentElement; if (el.requestFullscreen) { Guard.fsWanted = true; el.requestFullscreen().catch(() => { Guard.fsWanted = false; if (manual) toast('Full screen is not available here.'); }); } },
-    fsChange() { if (!document.fullscreenElement && Guard.fsWanted && Guard.active && !(mst && mst.done)) { T.log('fullscreen-exit', Guard.ctx()); showOv(`<div style="font-size:48px">🖥️</div><h2>Back to full screen!</h2><p>Mission mode works best in full screen. Your teacher has been told.</p><button id="fsback" class="fun">Back to my mission 🚀</button>`); $('#fsback').onclick = () => { hideOv(); Guard.goFullscreen(); }; } },
+    goFullscreen(manual) { if (TOUCH) { if (manual) toast('Full screen is not needed on this device.'); return; } const el = document.documentElement; if (el.requestFullscreen) { Guard.fsWanted = true; el.requestFullscreen().catch(() => { Guard.fsWanted = false; if (manual) toast('Full screen is not available here.'); }); } },
+    fsChange() { if (!TOUCH && !document.fullscreenElement && Guard.fsWanted && Guard.active && !(mst && mst.done)) { T.log('fullscreen-exit', Guard.ctx()); showOv(`<div style="font-size:48px">🖥️</div><h2>Back to full screen!</h2><p>Mission mode works best in full screen. Your teacher has been told.</p><button id="fsback" class="fun">Back to my mission 🚀</button>`); $('#fsback').onclick = () => { hideOv(); Guard.goFullscreen(); }; } },
     vis() { if (document.hidden) Guard.leave('tab-hidden', Date.now()); else Guard.back(); },
     blur() { if (TOUCH) return; clearTimeout(Guard.blurT); const t0 = Date.now(); Guard.blurT = setTimeout(() => { if (!document.hasFocus()) Guard.leave('window-blur', t0); }, 1200); },
     leave(reason, t0) {
