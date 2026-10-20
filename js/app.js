@@ -317,7 +317,7 @@
     goFullscreen(manual) { const el = document.documentElement; if (el.requestFullscreen) { Guard.fsWanted = true; el.requestFullscreen().catch(() => { Guard.fsWanted = false; if (manual) toast('Full screen is not available here.'); }); } },
     fsChange() { if (!document.fullscreenElement && Guard.fsWanted && Guard.active && !(mst && mst.done)) { T.log('fullscreen-exit', Guard.ctx()); showOv(`<div style="font-size:48px">🖥️</div><h2>Back to full screen!</h2><p>Mission mode works best in full screen. Your teacher has been told.</p><button id="fsback" class="fun">Back to my mission 🚀</button>`); $('#fsback').onclick = () => { hideOv(); Guard.goFullscreen(); }; } },
     vis() { if (document.hidden) Guard.leave('tab-hidden', Date.now()); else Guard.back(); },
-    blur() { if (TOUCH) return; const ae = document.activeElement; if (ae && /^(input|textarea|select)$/i.test(ae.tagName)) return; clearTimeout(Guard.blurT); const t0 = Date.now(); Guard.blurT = setTimeout(() => { if (!document.hasFocus()) Guard.leave('window-blur', t0); }, 1200); },
+    blur() { if (TOUCH) return; clearTimeout(Guard.blurT); const t0 = Date.now(); Guard.blurT = setTimeout(() => { if (!document.hasFocus()) Guard.leave('window-blur', t0); }, 1200); },
     leave(reason, t0) {
       if (!Guard.active || Guard.away || (mst && mst.done)) return; if (setCurSafe()) { }
       Guard.away = { t: t0, reason, q: curN }; mst.leaves = (mst.leaves || 0) + 1;
