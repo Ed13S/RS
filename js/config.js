@@ -24,7 +24,7 @@ window.MQ_CONFIG = {
   // Anthropic API key. WARNING: anything in this file is public once it is on GitHub Pages.
   // Use a key with a small spend limit, or use CLUE_PROXY_URL instead (see README).
   CLUE_API_KEY: "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",
-  CLUE_MODEL: "claude-haiku-5-5",
+  CLUE_MODEL: "openrouter/free",
   CLUE_PROXY_URL: "",              // optional: your own endpoint that holds the key
   MAX_CLUES: 3,                    // clues allowed per question
 
