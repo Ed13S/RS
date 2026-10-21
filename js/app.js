@@ -4,7 +4,10 @@
   const M = window.MQ, CFG = window.MQ_CONFIG || {}, T = M.Tracker, LS = M.LS, C = M.Course, esc = M.esc;
   const $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
   const APP = $('#app'), OV = $('#overlay');
-  const NMOD = C.count, DPW = Math.max(1, CFG.DAYS_PER_WEEK || 1), MAXCLUE = CFG.MAX_CLUES || 3;
+  const NMOD = C.count, DPW = Math.max(1, CFG.DAYS_PER_WEEK || 1), DAYCLUE = CFG.CLUES_PER_DAY || 20;
+  const dayKey = () => new Date().toDateString();
+  const cluesUsed = () => { const d = LS.get('mq_clues_day', null); return d && d.d === dayKey() ? d.n : 0; };
+  const cluesLeft = () => adminMode ? 99 : Math.max(0, DAYCLUE - cluesUsed());
   const PRAISE = ['Brilliant! 🌟', 'You got it! 🎉', 'Nailed it! 💪', 'Correct! 🚀', 'Super maths! 🧠', 'Yes! 🙌', 'Spot on! 🎯', 'Wow, nice one! ⭐', 'Smashed it! 💥'];
   const TRY = ['Not quite – have another go! 💪', 'Close! Check your working. 🔎', 'Hmm, not yet. You can do it! 🌈', 'Read the question slowly and try again. 📖', 'Oops! Take a breath and retry. 🌬️'];
   let adminMode = !!LS.get('mq_admin', false);
@@ -160,7 +163,7 @@
       const im = (q.type === 'num' && parseFloat(q.answer) >= 0) ? 'decimal' : 'text';
       input = `<div class="ans">${q.pre ? `<span class="pre">${q.pre}</span>` : ''}<input type="text" inputmode="${TOUCH ? 'none' : im}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${ph}" aria-label="Answer for question ${q.n + 1}" value="${s.ok ? esc(s.given || '') : ''}" class="${s.ok ? 'good' : ''}" ${s.ok || s.rev ? 'readonly' : ''}>${q.unit ? `<span class="unit">${esc(q.unit)}</span>` : ''}<button type="button" class="chk" ${s.ok || s.rev ? 'disabled' : ''}>Check ✓</button></div>`;
     }
-    return `<div class="q ${s.ok ? 'ok' : s.rev ? 'rev' : ''}" id="q${q.n}" data-n="${q.n}"><div class="qh"><div class="qn">${s.ok ? '✓' : q.n + 1}</div><div class="qp">${q.prompt}</div></div>${q.svg || ''}${input}<div class="fb ${s.ok ? 'good' : ''}">${s.ok ? PRAISE[q.n % PRAISE.length] : ''}</div><div class="extra">${hintsHTML(s)}${s.ok || s.rev ? `<div class="sol">💡 ${q.sol}${s.rev ? '<br><b>Answer: ' + esc(M.displayAnswer(q)) + '</b>' : ''}</div>` : ''}</div><div class="wkrow"><button type="button" class="ghost small work">✏️ Working out${s.wk ? ' ✓' : ''}</button></div>${s.ok || s.rev ? '' : `<div class="tools"><button type="button" class="ghost small clue">🦉 Ask Professor Pip for a clue <span class="cl">${(s.clues || 0)}/${MAXCLUE}</span></button><button type="button" class="warn small help">🙋 Ask for help</button><button type="button" class="warn small show hidden">👀 Show me how</button></div>`}</div>`;
+    return `<div class="q ${s.ok ? 'ok' : s.rev ? 'rev' : ''}" id="q${q.n}" data-n="${q.n}"><div class="qh"><div class="qn">${s.ok ? '✓' : q.n + 1}</div><div class="qp">${q.prompt}</div></div>${q.svg || ''}${input}<div class="fb ${s.ok ? 'good' : ''}">${s.ok ? PRAISE[q.n % PRAISE.length] : ''}</div><div class="extra">${hintsHTML(s)}${s.ok || s.rev ? `<div class="sol">💡 ${q.sol}${s.rev ? '<br><b>Answer: ' + esc(M.displayAnswer(q)) + '</b>' : ''}</div>` : ''}</div><div class="wkrow"><button type="button" class="ghost small work">✏️ Working out${s.wk ? ' ✓' : ''}</button></div>${s.ok || s.rev ? '' : `<div class="tools"><button type="button" class="ghost small clue">🦉 Ask Professor Pip for a clue <span class="cl">${cluesLeft()} left today</span></button><button type="button" class="warn small help">🙋 Ask for help</button><button type="button" class="warn small show hidden">👀 Show me how</button></div>`}</div>`;
   }
   function renderModule(resume) {
     curN = 0; for (const q of mod.questions) { const s = mst.q[q.id]; if (!(s && (s.ok || s.rev))) { curN = q.n; break; } }
@@ -213,7 +216,7 @@
       else if (e.target.closest('[data-mc]')) submit(q, e.target.closest('[data-mc]').dataset.mc, false, e.target.closest('[data-mc]'));
       else if (e.target.closest('.help')) askHelp(q, e.target.closest('.help'));
       else if (e.target.closest('.work')) openPad(q, e.target.closest('.work'));
-      else if (e.target.closest('.clue')) askClue(q);
+      else if (e.target.closest('button.clue')) askClue(q);
       else if (e.target.closest('.show')) showMe(q);
     });
     let liveT = 0;
@@ -264,11 +267,10 @@
   const hintsHTML = s => (s.th || []).map(h => `<div class="clue">${hintHTML(h.text)}</div>`).join('');
   function askHelp(q, btn) {
     const s = qSt(q), now = Date.now();
-    if (s.helpAt && now - s.helpAt < 60000) { toast('Your message is already on its way – keep thinking! 💌'); return; }
     s.helpAt = now; s.helps = (s.helps || 0) + 1; save();
     T.log('help_request', { mod: mi + 1, q: q.n + 1, qid: q.id, qText: qtext(q), wrong: (s.wrong || []).slice(-4), att: s.att || 0 });
     T.notify(`🙋 ${st.name} needs help`, `${label(mi)} Q${q.n + 1}: ${qtext(q).slice(0, 120)} · wrong tries: ${(s.wrong || []).slice(-3).join(', ') || 'none yet'}`, ['sos'], 4, location.href.replace(/[^/]*([?#].*)?$/, '') + 'admin.html');
-    btn.textContent = '📨 Sent! Keep thinking…'; toast('Your teacher has been asked 💌 – keep trying while you wait!');
+    btn.textContent = '📨 Sent! Ask again if you need more'; toast('Your teacher has been asked 💌 – keep trying while you wait!');
   }
   /* ---------- handwritten working out ---------- */
   const WORK = {};
@@ -301,15 +303,13 @@
   /* ---------- clues from Professor Pip ---------- */
   function fallbackClue(q, n) {
     const asks = ['What is this question asking you to find? Say it in your own words. 🤔',
-      'Which numbers matter here, and what is happening to them – are they being joined, taken away, shared or grouped? 🧐',
-      'Try an easier version first with small numbers. What would you do there? Then do the same thing here. 🌟'];
-    return asks[Math.min(n, 3) - 1];
+      'Which numbers matter here, and what is happening to them – are they being joined, taken away, shared or grouped? 🧐'];
+    if (n <= 2) return asks[n - 1];
     const hint = String(q.hint || 'Break it into small steps and do one at a time.');
-    if (n <= 1) return hint + ' 🦉';
-    if (n === 2) return hint + ' Write each step on paper (or tap ✏️ Working out) and do one step at a time. 📝';
+    if (n === 3) return hint + ' Write each step on paper (or tap ✏️ Working out). 📝';
     const first = String(M.strip(q.sol || '')).split(/[;,]|\bthen\b/i)[0].trim();
-    if (first && first.length < 60 && !leaks(first, q) && !/\?/.test(first)) return 'Here is how I would start: ' + first + '. What comes next? 🌟';
-    return hint + ' Check each step carefully – you are close! 🌟';
+    if (first && first.length < 60 && !leaks(first, q) && !/\?/.test(first)) return 'Start like this: ' + first + '. Now do the next step with that answer! 🌟';
+    return hint + ' Do it one step at a time and check each step – you are close! 🌟';
   }
   function leaks(text, q) {
     const a = q.type === 'mc' ? String(q.choices[+q.answer]) : String(q.answer);
@@ -319,7 +319,7 @@
   }
   async function getClue(q, n, s) {
     if (!CFG.CLUE_API_KEY && !CFG.CLUE_PROXY_URL) return { text: fallbackClue(q, n), ai: false };
-    const sys = `You are Professor Pip, a kind, playful owl who helps a child (about 10 years old, in Australia) with maths. Write ONE short reply about THIS question: at most 2 short sentences, simple words, at most one emoji. Your job is to make her THINK, so ask 1 or 2 guiding questions about this specific question (mention the objects in the story). Do NOT tell her which operation to use, do NOT list steps, and do NOT do any of the calculation. Never just say 'read the question carefully'. NEVER state the final answer, NEVER do the final calculation for the child, and never write a number equal to the answer. This is clue ${n} of ${MAXCLUE}: clue 1 = ask what the question is asking and what she notices; clue 2 = ask which numbers matter and what is happening to them in the story; clue 3 = ask her to imagine an easier version with small DIFFERENT numbers and what she would do there, then link it back to hers. If the child's wrong tries show a common mistake, gently steer away from it. Be warm and encouraging.`;
+    const sys = `You are Professor Pip, a kind, playful owl who helps a child (about 10 years old, in Australia) with maths. Write ONE short reply about THIS question: at most 2 short sentences (3 for clue 3 or more), simple words, at most one emoji. NEVER state the final answer, NEVER do the final calculation, and never write a number equal to the answer. This is clue number ${n} for this question. Clue 1: ask ONE guiding question about what the question is asking or what she notices (mention the objects in the story). Clue 2: ask which numbers matter and what is happening to them in the story. Clue 3: be much more explicit and tell her exactly what to do: name the operation(s) and which numbers to use, in order, but do not give any results. Clue 4 or more: get closer still: walk through the first step with her (you may give the result of that first step only if it is NOT the final answer), then tell her exactly what is left to do. Never just say 'read the question carefully'. If her wrong tries show a common mistake, gently point at it. Be warm and encouraging.`;
     const user = `Question (diagram described in words if any): ${q.desc}\n\nFOR YOUR EYES ONLY (never reveal): correct answer = ${M.displayAnswer(q)}; method = ${M.strip(q.sol)}\n\nThe child's wrong tries so far: ${s.wrong.length ? s.wrong.slice(-4).join(', ') : 'none yet'}.\n\nWrite clue ${n} now.`;
     const body = JSON.stringify({ model: CFG.CLUE_MODEL || 'claude-haiku-5-5', max_tokens: 220, system: sys, messages: [{ role: 'user', content: user }] });
     try {
@@ -333,12 +333,13 @@
   }
   async function askClue(q) {
     const s = qSt(q); if (s.ok || s.rev) return; const card = $('#q' + q.n);
-    if ((s.clues || 0) >= MAXCLUE) { toast('Professor Pip has no more clues for this one – you can do it! 💪'); return; }
-    const btn = $('.clue', card); btn.disabled = true; s.clues = (s.clues || 0) + 1; $('.cl', btn).textContent = s.clues + '/' + MAXCLUE;
+    if (cluesLeft() <= 0) { toast('Professor Pip has given all his clues for today – he is back tomorrow! Try 🙋 Ask for help.'); return; }
+    if (!adminMode) LS.set('mq_clues_day', { d: dayKey(), n: cluesUsed() + 1 });
+    const btn = $('button.clue', card); btn.disabled = true; s.clues = (s.clues || 0) + 1; $$('.clue .cl').forEach(x => x.textContent = cluesLeft() + ' left today');
     const ex = $('.extra', card); const holder = document.createElement('div'); holder.className = 'clue'; holder.innerHTML = '<div class="pipbox"><div class="e">🦉</div><div>Professor Pip is thinking…</div></div>'; ex.appendChild(holder);
     const r = await getClue(q, s.clues, s); holder.innerHTML = `<div class="pipbox"><div class="e">🦉</div><div><b>Clue ${s.clues}:</b> ${esc(r.text)}</div></div>`;
     T.log('clue', { mod: mi + 1, q: q.n + 1, qid: q.id, qText: qtext(q), n: s.clues, ai: r.ai, text: r.text.slice(0, 300), note: r.err || (r.blocked ? 'blocked-answer-leak' : '') });
-    if (s.clues < MAXCLUE) btn.disabled = false; save();
+    btn.disabled = false; save();
   }
 
   /* ---------- finishing ---------- */
