@@ -329,5 +329,22 @@
 
   g.MQ = g.MQ || {};
   Object.assign(g.MQ, { RNG, NAMES, ITEMS, gcd, lcm, rd, T, esc, strip, fmt, raw, mon, sup, frac, B, C, svg, tx, ln, rc, poly, circ, cellGrid, dotArray, fracBar, fracCircle, fracGrid, barChart, lineChart, spinner, numberLine, clock, rectLabeled, isoCuboid, boxLabeled, fan, parallel, triangleAngles, quadAngles, rightTri, coordGrid, machine, tally, ruler, lShape, triShape, paraShape, trapShape, circleShape, cylShape, prismShape, check, parseNum, parseFrac, displayAnswer });
+  /* LLM helper: Anthropic key (sk-ant-...), OpenRouter key (sk-or-...), or a proxy URL */
+  g.MQ.llm = async function (system, user, maxTokens) {
+    const CFG = g.MQ_CONFIG || {}, key = CFG.CLUE_API_KEY || '', max = maxTokens || 220;
+    let r, j, text;
+    if (CFG.CLUE_PROXY_URL) {
+      r = await fetch(CFG.CLUE_PROXY_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ model: CFG.CLUE_MODEL || 'claude-haiku-5-5', max_tokens: max, system, messages: [{ role: 'user', content: user }] }) });
+      if (!r.ok) throw new Error('HTTP ' + r.status); j = await r.json(); text = (j.content || []).map(c => c.text || '').join(' ');
+    } else if (/^sk-or-/.test(key) || /openrouter/i.test(CFG.CLUE_PROVIDER || '')) {
+      const model = (CFG.CLUE_MODEL && !/^claude-/.test(CFG.CLUE_MODEL)) ? CFG.CLUE_MODEL : 'openrouter/free';
+      r = await fetch('https://openrouter.ai/api/v1/chat/completions', { method: 'POST', headers: { 'content-type': 'application/json', 'authorization': 'Bearer ' + key, 'X-Title': 'MathQuest' }, body: JSON.stringify({ model, max_tokens: Math.max(max, 300), messages: [{ role: 'system', content: system }, { role: 'user', content: user }] }) });
+      if (!r.ok) throw new Error('HTTP ' + r.status); j = await r.json(); const m = j.choices && j.choices[0] && j.choices[0].message; text = (m && (m.content || '')) || '';
+    } else {
+      r = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' }, body: JSON.stringify({ model: CFG.CLUE_MODEL || 'claude-haiku-5-5', max_tokens: max, system, messages: [{ role: 'user', content: user }] }) });
+      if (!r.ok) throw new Error('HTTP ' + r.status); j = await r.json(); text = (j.content || []).map(c => c.text || '').join(' ');
+    }
+    return String(text).replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+  };
   if (typeof module !== 'undefined') module.exports = g.MQ;
 })(typeof window !== 'undefined' ? window : globalThis);

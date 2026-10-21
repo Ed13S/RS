@@ -156,11 +156,7 @@
   async function suggest(q, wrong) {
     const sys = "You are helping a teacher write a short, warm message (1 to 3 short sentences, simple words, at most one emoji) to a child of about 10 who is stuck on a maths question. Make her think: ask 1 or 2 guiding questions that point her at the key idea. Do NOT state the answer, do NOT do the calculation, and do not simply tell her which operation to use. If her wrong answers suggest a mistake, ask a question that nudges her to check that part. Output only the message.";
     const user = `Question: ${M.strip(q.prompt)}\nDiagram: ${q.desc || 'none'}\nFOR YOUR EYES ONLY: correct answer = ${M.displayAnswer(q)}; method = ${M.strip(q.sol)}\nHer wrong answers so far: ${wrong.length ? wrong.slice(-5).join(', ') : 'none'}\n\nWrite the message.`;
-    const body = JSON.stringify({ model: CFG.CLUE_MODEL || 'claude-haiku-5-5', max_tokens: 220, system: sys, messages: [{ role: 'user', content: user }] });
-    const r = CFG.CLUE_PROXY_URL ? await fetch(CFG.CLUE_PROXY_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body })
-      : await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': CFG.CLUE_API_KEY, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' }, body });
-    if (!r.ok) throw new Error('AI request failed (HTTP ' + r.status + ')');
-    const j = await r.json(); return ((j.content || []).map(c => c.text || '').join(' ')).trim();
+    return await M.llm(sys, user, 220);
   }
   function compose(sid, m, qid) {
     if (!cloud()) { alert('Sending hints needs Firebase set up (FIREBASE_DB_URL in js/config.js).'); return; }

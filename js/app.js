@@ -321,12 +321,8 @@
     if (!CFG.CLUE_API_KEY && !CFG.CLUE_PROXY_URL) return { text: fallbackClue(q, n), ai: false };
     const sys = `You are Professor Pip, a kind, playful owl who helps a child (about 10 years old, in Australia) with maths. Write ONE short reply about THIS question: at most 2 short sentences (3 for clue 3 or more), simple words, at most one emoji. NEVER state the final answer, NEVER do the final calculation, and never write a number equal to the answer. This is clue number ${n} for this question. Clue 1: ask ONE guiding question about what the question is asking or what she notices (mention the objects in the story). Clue 2: ask which numbers matter and what is happening to them in the story. Clue 3: be much more explicit and tell her exactly what to do: name the operation(s) and which numbers to use, in order, but do not give any results. Clue 4 or more: get closer still: walk through the first step with her (you may give the result of that first step only if it is NOT the final answer), then tell her exactly what is left to do. Never just say 'read the question carefully'. If her wrong tries show a common mistake, gently point at it. Be warm and encouraging.`;
     const user = `Question (diagram described in words if any): ${q.desc}\n\nFOR YOUR EYES ONLY (never reveal): correct answer = ${M.displayAnswer(q)}; method = ${M.strip(q.sol)}\n\nThe child's wrong tries so far: ${s.wrong.length ? s.wrong.slice(-4).join(', ') : 'none yet'}.\n\nWrite clue ${n} now.`;
-    const body = JSON.stringify({ model: CFG.CLUE_MODEL || 'claude-haiku-5-5', max_tokens: 220, system: sys, messages: [{ role: 'user', content: user }] });
     try {
-      const r = CFG.CLUE_PROXY_URL ? await fetch(CFG.CLUE_PROXY_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body })
-        : await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': CFG.CLUE_API_KEY, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' }, body });
-      if (!r.ok) throw new Error(r.status);
-      const j = await r.json(); const text = ((j.content || []).map(c => c.text || '').join(' ')).trim();
+      const text = await M.llm(sys, user, 220);
       if (!text || leaks(text, q)) return { text: fallbackClue(q, n), ai: false, blocked: !!text };
       return { text, ai: true };
     } catch (e) { return { text: fallbackClue(q, n), ai: false, err: String(e.message || e) }; }
