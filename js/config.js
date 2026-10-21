@@ -27,7 +27,8 @@ window.MQ_CONFIG = {
   CLUE_MODEL: "openrouter/free",
   CLUE_PROXY_URL: "",              // optional: your own endpoint that holds the key
   MAX_CLUES: 3,                    // clues allowed per question
-
+CLUES_PER_DAY: 10,
+   
   // ---- Course layout ----
   DAYS_PER_WEEK: 1,                // 1 = "Week 1, Week 2 ..."; 5 = "Week 1 Day 1 ... Day 5"
   UNLOCK_ALL: false                // true = every module open from the start (handy for testing)
