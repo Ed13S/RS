@@ -4,10 +4,10 @@ html{-webkit-text-size-adjust:100%}
 body{margin:0;background:radial-gradient(1200px 500px at 80% -10%,#e3dcff 0,transparent 60%),radial-gradient(900px 400px at -10% 10%,#ffe9f1 0,transparent 55%),var(--bg);color:var(--ink);font:17px/1.5 "Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
 h1,h2,h3,.fun{font-family:"Baloo 2","Nunito",system-ui,sans-serif;line-height:1.15}
 button,input{font:inherit}
-button{cursor:pointer;border:0;border-radius:14px;padding:11px 18px;font-weight:800;background:var(--purple);color:#fff;box-shadow:0 4px 0 #4c3fc0;transition:transform .08s,box-shadow .08s}
-button:hover{transform:translateY(-1px)}button:active{transform:translateY(3px);box-shadow:0 1px 0 #4c3fc0}
+button{cursor:pointer;border:0;border-radius:14px;padding:11px 18px;font-weight:800;background:#ffd166;color:#2b2550;box-shadow:0 4px 0 #e0a100;transition:transform .08s,box-shadow .08s}
+button:hover{transform:translateY(-1px)}button:active{transform:translateY(3px);box-shadow:0 1px 0 #e0a100}
 button:disabled{opacity:.45;cursor:not-allowed;transform:none}
-button.ghost{background:#ece8ff;color:#4a3db0;box-shadow:0 4px 0 #cfc7f7}
+button.ghost{background:#ece8ff;color:#2b2080;box-shadow:0 4px 0 #cfc7f7}
 button.warn{background:#fff0d6;color:#8a5200;box-shadow:0 4px 0 #f0d49c}
 button.small{padding:7px 12px;font-size:14px;border-radius:11px}
 .wrap{max-width:1180px;margin:0 auto;padding:16px}

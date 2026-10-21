@@ -46,6 +46,10 @@
     if (c.type === 'resetMod') delete st.mods[i];
     else if (c.type === 'completeMod') { const m = ms(); C.buildModule(i).questions.forEach(q => mark(m, q)); m.done = true; m.score = okCount(m); m.finishedAt = m.finishedAt || Date.now(); m.adm = 1; }
     else if (c.type === 'completeQ') { const m = ms(), q = C.buildModule(i).questions.find(x => x.id === c.qid); if (q) mark(m, q); }
+    else if (c.type === 'hint') {
+      const m = ms(), x = m.q[c.qid] || (m.q[c.qid] = { att: 0, wrong: [], clues: 0 }); (x.th = x.th || []).push({ t: c.t || Date.now(), text: String(c.text || '').slice(0, 600) });
+      if (mod && i === mi) { const q = mod.questions.find(z => z.id === c.qid), card = q && $('#q' + q.n); if (card && !(x.ok || x.rev)) { const d = document.createElement('div'); d.className = 'clue'; d.innerHTML = hintHTML(c.text); $('.extra', card).appendChild(d); card.scrollIntoView({ block: 'center', behavior: 'smooth' }); } toast('💌 New hint from your teacher!'); ding(true); }
+    }
     else if (c.type === 'unleave') { const m = st.mods[i]; if (m) { m.leaves = Math.max(0, (m.leaves || 0) - 1); m.awayMs = Math.max(0, (m.awayMs || 0) - (+c.awayMs || 0)); } }
     else if (c.type === 'clearLeaves') Object.keys(st.mods).forEach(k => { st.mods[k].leaves = 0; st.mods[k].awayMs = 0; });
     else if (c.type === 'resetQ') { const m = st.mods[i]; if (m && m.q) { delete m.q[c.qid]; m.done = false; delete m.finishedAt; } }
@@ -156,7 +160,7 @@
       const im = (q.type === 'num' && parseFloat(q.answer) >= 0) ? 'decimal' : 'text';
       input = `<div class="ans">${q.pre ? `<span class="pre">${q.pre}</span>` : ''}<input type="text" inputmode="${TOUCH ? 'none' : im}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${ph}" aria-label="Answer for question ${q.n + 1}" value="${s.ok ? esc(s.given || '') : ''}" class="${s.ok ? 'good' : ''}" ${s.ok || s.rev ? 'readonly' : ''}>${q.unit ? `<span class="unit">${esc(q.unit)}</span>` : ''}<button type="button" class="chk" ${s.ok || s.rev ? 'disabled' : ''}>Check ✓</button></div>`;
     }
-    return `<div class="q ${s.ok ? 'ok' : s.rev ? 'rev' : ''}" id="q${q.n}" data-n="${q.n}"><div class="qh"><div class="qn">${s.ok ? '✓' : q.n + 1}</div><div class="qp">${q.prompt}</div></div>${q.svg || ''}${input}<div class="fb ${s.ok ? 'good' : ''}">${s.ok ? PRAISE[q.n % PRAISE.length] : ''}</div><div class="extra">${s.ok || s.rev ? `<div class="sol">💡 ${q.sol}${s.rev ? '<br><b>Answer: ' + esc(M.displayAnswer(q)) + '</b>' : ''}</div>` : ''}</div><div class="wkrow"><button type="button" class="ghost small work">✏️ Working out${s.wk ? ' ✓' : ''}</button></div>${s.ok || s.rev ? '' : `<div class="tools"><button type="button" class="ghost small clue">🦉 Ask Professor Pip for a clue <span class="cl">${(s.clues || 0)}/${MAXCLUE}</span></button><button type="button" class="warn small show hidden">👀 Show me how</button></div>`}</div>`;
+    return `<div class="q ${s.ok ? 'ok' : s.rev ? 'rev' : ''}" id="q${q.n}" data-n="${q.n}"><div class="qh"><div class="qn">${s.ok ? '✓' : q.n + 1}</div><div class="qp">${q.prompt}</div></div>${q.svg || ''}${input}<div class="fb ${s.ok ? 'good' : ''}">${s.ok ? PRAISE[q.n % PRAISE.length] : ''}</div><div class="extra">${hintsHTML(s)}${s.ok || s.rev ? `<div class="sol">💡 ${q.sol}${s.rev ? '<br><b>Answer: ' + esc(M.displayAnswer(q)) + '</b>' : ''}</div>` : ''}</div><div class="wkrow"><button type="button" class="ghost small work">✏️ Working out${s.wk ? ' ✓' : ''}</button></div>${s.ok || s.rev ? '' : `<div class="tools"><button type="button" class="ghost small clue">🦉 Ask Professor Pip for a clue <span class="cl">${(s.clues || 0)}/${MAXCLUE}</span></button><button type="button" class="warn small help">🙋 Ask for help</button><button type="button" class="warn small show hidden">👀 Show me how</button></div>`}</div>`;
   }
   function renderModule(resume) {
     curN = 0; for (const q of mod.questions) { const s = mst.q[q.id]; if (!(s && (s.ok || s.rev))) { curN = q.n; break; } }
@@ -207,6 +211,7 @@
       const q = qOf(e.target); if (!q) return;
       if (e.target.closest('.chk')) { const inp = $('input', e.target.closest('.q')); submit(q, inp.value, false); }
       else if (e.target.closest('[data-mc]')) submit(q, e.target.closest('[data-mc]').dataset.mc, false, e.target.closest('[data-mc]'));
+      else if (e.target.closest('.help')) askHelp(q, e.target.closest('.help'));
       else if (e.target.closest('.work')) openPad(q, e.target.closest('.work'));
       else if (e.target.closest('.clue')) askClue(q);
       else if (e.target.closest('.show')) showMe(q);
@@ -255,6 +260,16 @@
   }
 
 
+  const hintHTML = t => `<div class="pipbox"><div class="e">👩‍🏫</div><div><b>Hint from your teacher:</b> ${esc(t)}</div></div>`;
+  const hintsHTML = s => (s.th || []).map(h => `<div class="clue">${hintHTML(h.text)}</div>`).join('');
+  function askHelp(q, btn) {
+    const s = qSt(q), now = Date.now();
+    if (s.helpAt && now - s.helpAt < 60000) { toast('Your message is already on its way – keep thinking! 💌'); return; }
+    s.helpAt = now; s.helps = (s.helps || 0) + 1; save();
+    T.log('help_request', { mod: mi + 1, q: q.n + 1, qid: q.id, qText: qtext(q), wrong: (s.wrong || []).slice(-4), att: s.att || 0 });
+    T.notify(`🙋 ${st.name} needs help`, `${label(mi)} Q${q.n + 1}: ${qtext(q).slice(0, 120)} · wrong tries: ${(s.wrong || []).slice(-3).join(', ') || 'none yet'}`, ['sos'], 4, location.href.replace(/[^/]*([?#].*)?$/, '') + 'admin.html');
+    btn.textContent = '📨 Sent! Keep thinking…'; toast('Your teacher has been asked 💌 – keep trying while you wait!');
+  }
   /* ---------- handwritten working out ---------- */
   const WORK = {};
   function openPad(q, btn) {
@@ -285,6 +300,10 @@
 
   /* ---------- clues from Professor Pip ---------- */
   function fallbackClue(q, n) {
+    const asks = ['What is this question asking you to find? Say it in your own words. 🤔',
+      'Which numbers matter here, and what is happening to them – are they being joined, taken away, shared or grouped? 🧐',
+      'Try an easier version first with small numbers. What would you do there? Then do the same thing here. 🌟'];
+    return asks[Math.min(n, 3) - 1];
     const hint = String(q.hint || 'Break it into small steps and do one at a time.');
     if (n <= 1) return hint + ' 🦉';
     if (n === 2) return hint + ' Write each step on paper (or tap ✏️ Working out) and do one step at a time. 📝';
@@ -300,7 +319,7 @@
   }
   async function getClue(q, n, s) {
     if (!CFG.CLUE_API_KEY && !CFG.CLUE_PROXY_URL) return { text: fallbackClue(q, n), ai: false };
-    const sys = `You are Professor Pip, a kind, playful owl who helps a child (about 10 years old, in Australia) with maths. Write ONE short, SPECIFIC clue about THIS question: at most 2 short sentences, simple words, at most one emoji. Mention what the question is actually about (the objects or numbers' roles) and name the operation or idea to use. Never just say 'read the question carefully' or give vague advice. NEVER state the final answer, NEVER do the final calculation for the child, and never write a number equal to the answer. This is clue ${n} of ${MAXCLUE}: clue 1 = point to the key idea and what is being asked, e.g. 'This is a sharing problem, so think about dividing the stickers first'; clue 2 = name the first step to do and which numbers it uses, without doing the sum; clue 3 = do a similar but easier worked example with DIFFERENT numbers, then ask her to do the same steps with hers, or show the first step's result only if it is not the final answer. If the child's wrong tries show a common mistake, gently steer away from it. Be warm and encouraging.`;
+    const sys = `You are Professor Pip, a kind, playful owl who helps a child (about 10 years old, in Australia) with maths. Write ONE short reply about THIS question: at most 2 short sentences, simple words, at most one emoji. Your job is to make her THINK, so ask 1 or 2 guiding questions about this specific question (mention the objects in the story). Do NOT tell her which operation to use, do NOT list steps, and do NOT do any of the calculation. Never just say 'read the question carefully'. NEVER state the final answer, NEVER do the final calculation for the child, and never write a number equal to the answer. This is clue ${n} of ${MAXCLUE}: clue 1 = ask what the question is asking and what she notices; clue 2 = ask which numbers matter and what is happening to them in the story; clue 3 = ask her to imagine an easier version with small DIFFERENT numbers and what she would do there, then link it back to hers. If the child's wrong tries show a common mistake, gently steer away from it. Be warm and encouraging.`;
     const user = `Question (diagram described in words if any): ${q.desc}\n\nFOR YOUR EYES ONLY (never reveal): correct answer = ${M.displayAnswer(q)}; method = ${M.strip(q.sol)}\n\nThe child's wrong tries so far: ${s.wrong.length ? s.wrong.slice(-4).join(', ') : 'none yet'}.\n\nWrite clue ${n} now.`;
     const body = JSON.stringify({ model: CFG.CLUE_MODEL || 'claude-haiku-5-5', max_tokens: 220, system: sys, messages: [{ role: 'user', content: user }] });
     try {

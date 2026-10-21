@@ -40,9 +40,9 @@
       const url = dbUrl(); if (T.disabled || !url || !T.sid) return;
       fetch(`${url}/mathquest/progress/${encodeURIComponent(T.sid)}.json`, { method: 'PUT', body: JSON.stringify(p) }).catch(() => { });
     },
-    notify(title, message, tags, priority) {
+    notify(title, message, tags, priority, click) {
       const topic = CFG().NTFY_TOPIC; if (!topic || T.disabled) return;
-      fetch('https://ntfy.sh/', { method: 'POST', keepalive: true, body: JSON.stringify({ topic, title, message, tags: tags || ['books'], priority: priority || 3 }) }).catch(() => { });
+      fetch('https://ntfy.sh/', { method: 'POST', keepalive: true, body: JSON.stringify(Object.assign({ topic, title, message, tags: tags || ['books'], priority: priority || 3 }, click ? { click } : {})) }).catch(() => { });
     },
     saveWork(qid, obj) {
       const url = dbUrl(); if (T.disabled || !url || !T.sid) return Promise.resolve(false);

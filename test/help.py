@@ -1,0 +1,17 @@
+exec(open('test/ctl.py').read().split("with sync_playwright")[0])
+with sync_playwright() as p:
+    b=p.chromium.launch(); ctx=b.new_context(viewport={'width':1100,'height':900}); pg=ctx.new_page(); errs=[]; pg.on('pageerror',lambda e:errs.append(str(e)))
+    ctx.route('**/*.firebaseio.com/**',fb); ctx.route('https://ntfy.sh/',ntfy); ctx.route('**/js/config.js*',lambda r:r.fulfill(body=CFGJS,content_type='application/javascript')); ctx.route('**/fonts.*/**',lambda r:r.abort())
+    pg.goto('http://localhost:8765/index.html'); pg.fill('#nm','Amy'); pg.click('#nameForm button'); pg.click('[data-open="0"]'); pg.click('#go'); pg.wait_for_selector('.q input')
+    pg.locator('.q input').first.fill('999'); pg.press('.q input >> nth=0','Enter'); pg.wait_for_timeout(400)
+    pg.locator('.help').first.click(); pg.wait_for_timeout(600)
+    print('notify:',[(n['title'],n.get('click'),n['priority']) for n in notes])
+    clue=pg.locator('.clue-btn, .clue').first
+    pg.locator('button.clue').first.click(); pg.wait_for_timeout(1500); print('pip fallback:',pg.locator('.pipbox').last.inner_text())
+    ad=ctx.new_page(); aerr=[]; ad.on('pageerror',lambda e:aerr.append(str(e)))
+    ad.goto('http://localhost:8765/admin.html'); ad.fill('#pw','x'); ad.press('#pw','Enter'); ad.wait_for_selector('text=Help requests'); print('help card shown')
+    ad.click('[data-act=compose]'); ad.wait_for_selector('#ht'); ad.fill('#ht','What are the 12 stickers being shared between? 🤔'); ad.click('#hsend'); ad.wait_for_timeout(1000)
+    print('cmd', [c['type'] for c in (getp('mathquest/control/amy/cmds') or {}).values()], 'help card gone:', ad.locator('text=Help requests').count()==0)
+    pg.wait_for_function("document.body.innerText.includes('Hint from your teacher')",timeout=15000); print('student got hint:', pg.locator('.pipbox', has_text='Hint from your teacher').first.inner_text().replace('\n',' '))
+    pg.reload(); pg.wait_for_selector('[data-open="0"]'); pg.click('[data-open="0"]'); pg.click('#go'); pg.wait_for_selector('.q input'); print('persisted after reload:', 'Hint from your teacher' in pg.inner_text('body'))
+    print('errs',errs,aerr); b.close()
