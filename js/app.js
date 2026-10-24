@@ -67,14 +67,15 @@
     const c = await T.loadControl(); if (c === false) return;
     const before = ctlSig; ctl = c || {}; ctlSig = JSON.stringify([ctl.access, ctl.all, ctl.silent]);
     if (ctl.wipe) { wipeDevice(); return; }
-    const applied = LS.get('mq_applied', []); let n = 0, hitCur = false;
+    const applied = LS.get('mq_applied', []); let n = 0, hitCur = false, softCur = false;
     Object.keys(ctl.cmds || {}).sort().forEach(k => {
-      const c2 = ctl.cmds[k]; if (!applied.includes(k)) { applyCmd(c2); applied.push(k); n++; if (mod && +c2.mod === mi && /^(completeMod|resetMod|completeQ|resetQ)$/.test(c2.type)) hitCur = true; T.log('admin_cmd', { cmd: c2.type, mod: +c2.mod + 1, qid: c2.qid || '' }); }
+      const c2 = ctl.cmds[k]; if (!applied.includes(k)) { applyCmd(c2); applied.push(k); n++; if (mod && +c2.mod === mi) { if (/^(completeMod|resetMod)$/.test(c2.type)) hitCur = true; else if (/^(completeQ|resetQ)$/.test(c2.type)) softCur = true; } T.log('admin_cmd', { cmd: c2.type, mod: +c2.mod + 1, qid: c2.qid || '' }); }
       T.ackCmd(k);
     });
     if (n) { LS.set('mq_applied', applied.slice(-300)); save(true); }
     if (quiet) return;
     if (hitCur) { toast('Your teacher updated this mission 👩‍🏫'); home(); }
+    else if (softCur && mod && mst) { const y = window.scrollY; mst = st.mods[mi] || mst; renderModule(true, true); window.scrollTo(0, y); toast('Your teacher marked a question 👩‍🏫'); if (resolved(mst) >= 30 && !mst.done) finish(); }
     else if ((n || before !== ctlSig) && !mod && st.name) home();
   }
   setInterval(() => { if (!document.hidden) syncCtl(); }, 10000);
@@ -165,7 +166,7 @@
     }
     return `<div class="q ${s.ok ? 'ok' : s.rev ? 'rev' : ''}" id="q${q.n}" data-n="${q.n}"><div class="qh"><div class="qn">${s.ok ? '✓' : q.n + 1}</div><div class="qp">${q.prompt}</div></div>${q.svg || ''}${input}<div class="fb ${s.ok ? 'good' : ''}">${s.ok ? PRAISE[q.n % PRAISE.length] : ''}</div><div class="extra">${hintsHTML(s)}${s.ok || s.rev ? `<div class="sol">💡 ${q.sol}${s.rev ? '<br><b>Answer: ' + esc(M.displayAnswer(q)) + '</b>' : ''}</div>` : ''}</div><div class="wkrow"><button type="button" class="ghost small work">✏️ Working out${s.wk ? ' ✓' : ''}</button></div>${s.ok || s.rev ? '' : `<div class="tools"><button type="button" class="ghost small clue">🦉 Ask Professor Pip for a clue <span class="cl">${cluesLeft()} left today</span></button><button type="button" class="warn small help">🙋 Ask for help</button><button type="button" class="warn small show hidden">👀 Show me how</button></div>`}</div>`;
   }
-  function renderModule(resume) {
+  function renderModule(resume, silent) {
     curN = 0; for (const q of mod.questions) { const s = mst.q[q.id]; if (!(s && (s.ok || s.rev))) { curN = q.n; break; } }
     const sc = M.Pictures.scene(mi), order = new M.RNG(mi * 7919 + 5).shuffle(Array.from({ length: 30 }, (_, k) => k)), j = M.Fun.joke(mi), rd = M.Fun.riddle(mi);
     mod.scene = sc; mod.order = order;
@@ -180,9 +181,9 @@
     <div class="bar"><span id="pbar"></span></div>
     <div class="card" style="padding:14px"><div class="pipbox"><div class="e">🦉</div><div id="pip" class="bubble">Hi ${esc(st.name)}! Every right answer opens a tile. Let's do this!</div></div><div class="small" id="streak" style="margin-top:6px"></div></div>
     <div class="card" style="padding:14px"><b>🧩 Riddle:</b> ${esc(rd[0])}<br><button class="small ghost" id="rbtn" style="margin-top:6px">Reveal answer</button><div id="rans" class="hidden fun" style="font-size:19px;margin-top:6px">${esc(rd[1])}</div></div></aside></div>`;
-    APP.innerHTML = h; window.scrollTo(0, 0);
+    APP.innerHTML = h; if (!silent) window.scrollTo(0, 0);
     wire(); syncTiles(false); updateProgress(); setCur(curN);
-    KP.inp = null; KP.open(); Guard.start(); T.log(resume ? 'module_resume' : 'module_start', { mod: mi + 1, label: label(mi), title: mod.title, done: okCount(mst) });
+    KP.inp = null; KP.open(); Guard.start(); if (!silent) T.log(resume ? 'module_resume' : 'module_start', { mod: mi + 1, label: label(mi), title: mod.title, done: okCount(mst) });
   }
   function syncTiles(animate) {
     const n = mst.done ? 30 : okCount(mst);

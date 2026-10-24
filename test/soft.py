@@ -1,0 +1,10 @@
+exec(open('test/ctl.py').read().split("with sync_playwright")[0])
+with sync_playwright() as p:
+    b=p.chromium.launch(); ctx=b.new_context(viewport={'width':1000,'height':900}); pg=ctx.new_page(); errs=[]; pg.on('pageerror',lambda e:errs.append(str(e)))
+    ctx.route('**/*.firebaseio.com/**',fb); ctx.route('https://ntfy.sh/',ntfy); ctx.route('**/js/config.js*',lambda r:r.fulfill(body=CFGJS,content_type='application/javascript')); ctx.route('**/fonts.*/**',lambda r:r.abort())
+    pg.goto('http://localhost:8765/index.html'); pg.fill('#nm','Amy'); pg.click('#nameForm button'); pg.click('[data-open="0"]'); pg.click('#go'); pg.wait_for_selector('.q input')
+    pg.wait_for_timeout(500); n0=len(notes)
+    setp('mathquest/control/amy/cmds/5',{'type':'completeQ','mod':0,'qid':'m1q1'})
+    pg.wait_for_function("document.querySelector('#q0') && document.querySelector('#q0').classList.contains('ok')",timeout=15000)
+    print('still in module:',pg.locator('.layout').count()==1,'tiles open:',pg.locator('.tile.open, .tile.gone, .tile.on').count(),'notes',len(notes)-n0, 'q1 ok')
+    setp('mathquest/control/amy/cmds/6',{'type':'resetQ','mod':0,'qid':'m1q1'}); pg.wait_for_function("!document.querySelector('#q0').classList.contains('ok')",timeout=15000); print('reset in place ok; errs',errs); b.close()
